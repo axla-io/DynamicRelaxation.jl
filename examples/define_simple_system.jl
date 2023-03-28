@@ -27,11 +27,15 @@ M_inv = SMatrix{3, 3, Float64}(I)
 J = SMatrix{3, 3, Float64}(I)
 J_inv  = SMatrix{3, 3, Float64}(I)
 
-np1 = NodeProperties{Float64}(M, M_inv, J, J_inv , false, @SVector(zeros(Bool, 7)))
+np1 = NodeProperties{Float64}(M, M_inv, J, J_inv , false, @SVector(zeros(Bool, 7)));
 
-np_fix = NodeProperties{Float64}(M, M_inv, J, J_inv , true, @SVector(zeros(Bool, 7)))
+np_fix = NodeProperties{Float64}(M, M_inv, J, J_inv , true, @SVector(zeros(Bool, 7)));
 
-nodes_description = vcat(:node_prop => np_fix, [:node_prop => np1 for i in 1:n_elem]...) #fill with properties
-edges_description = [:el_prop => ep for i in 1:n_elem] #fill with properties
 
-colors2 = MetaGraph(graph, nodes_description, edges_description, "simple structure")
+
+
+nodes_description = vcat(1 => np_fix, [i => np1 for i in 2:n_pt]...) #fill with properties
+
+edges_description = [(src(edge), dst(edge)) => ep for edge in edges(graph)] #fill with properties
+
+structure = MetaGraph(graph, nodes_description, edges_description, "simple structure")
