@@ -1,10 +1,10 @@
 
 abstract type StructureSimulation end
 
-struct RodSimulation{sType <: AbstractGraphSystem, tType <: Real, fType<:Real} <: StructureSimulation
-system::sType
-tspan::Tuple{tType, tType}
-ext_f::Vector{SVector{3, fType}}
+struct RodSimulation{sType<:AbstractGraphSystem,tType<:Real,fType<:Real} <: StructureSimulation
+    system::sType
+    tspan::Tuple{tType,tType}
+    ext_f::Vector{SVector{3,fType}}
 end
 
 
@@ -25,22 +25,19 @@ function gather_bodies_initial_coordinates(simulation::RodSimulation)
 end
 
 
-function DiffEqBase.ODEProblem(simulation<:RodSimulation{<:AbstractGraphSystem})
+function DiffEqBase.ODEProblem(simulation::RodSimulation{<:AbstractGraphSystem})
     (u0, v0, n) = gather_bodies_initial_coordinates(simulation)
+    system = simulation.system
+    ext_f = simulation.ext_f
 
-    acceleration_functions = gather_accelerations(simulation)
-
-    ode_system! = let acceleration_functions = tuple(acceleration_functions...)
-        function ode_system!(du, u, p, t)
-            du[:, 1:n] = @view u[:, (n + 1):(2n)]
-
-            @inbounds for i in 1:n
-                a = MVector(0.0, 0.0, 0.0)
-                for acceleration! in acceleration_functions
-                    acceleration!(a, u[:, 1:n], u[:, (n + 1):end], t, i)
-                end
-                du[:, n + i] .= a
-            end
+    function ode_system!(du, u, p, t)
+        du[:, 1:n] = @view u[:, (n+1):(2n)]
+        u_v = @view u[:, 1:n]
+        @inbounds for i in 1:n
+            a = MVector(0.0, 0.0, 0.0)
+            rod_acceleration!(a, u_v , system, i)
+            g_acceleration!(a, ext_f, i)
+            du[:, n+i] .= a
         end
     end
 

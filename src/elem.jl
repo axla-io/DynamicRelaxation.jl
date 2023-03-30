@@ -6,5 +6,6 @@ struct ElementProperties{T}
     Iz::T   # [m^4]
     G::T    # [Pa]
     It::T   # [m^4]
+    l_init::T   # [m]
 end
 
