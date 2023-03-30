@@ -2,6 +2,8 @@ using Graphs
 using MetaGraphsNext
 using StaticArrays
 using LinearAlgebra
+using NBodySimulator
+using StaticGraphs
 
 using Plots, GraphRecipes
 
@@ -10,9 +12,9 @@ include("src/include_lib.jl")
 # Define a simple graph and plot
 n_elem = 16
 n_pt = n_elem + 1
-graph = path_graph(n_pt)
+graph = StaticGraph(path_graph(n_pt))
 
-plot(g, curves = false)
+#plot(graph, curves = false)
 
 E = 210 * 1e9               # [Pa]
 Iy = Iz = 4.7619 * 1e-7     # [m^4]
@@ -39,3 +41,4 @@ nodes_description = vcat(1 => np_fix, [i => np1 for i in 2:n_pt]...) #fill with 
 edges_description = [(src(edge), dst(edge)) => ep for edge in edges(graph)] #fill with properties
 
 structure = MetaGraph(graph, nodes_description, edges_description, "simple structure")
+typeof(graph)
