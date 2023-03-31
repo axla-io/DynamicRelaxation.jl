@@ -3,43 +3,35 @@ using Infiltrator
 include("simple_graph.jl")
 
 
-function generate_range(n, t1, t2)
-    step = (t2 - t1) / (n - 1)
-    return [round(Int, t1 + i*step) for i in 0:n-1]
-end
+# Set loads
+ext_f = uniform_load([0.0, 0.0, -10.0], system)
 
-function condition(u, t, integrator)
-    #return (integrator.t>10.0)
-    return true
-end
-
-function affect!(integrator, n)
-    integrator.u[:, (n+1):(2n)] .*= 0.1
-    #integrator.u[:, :] = integrator.u[:, :] * 0.10
-end
-affect!(integrator) = affect!(integrator, n_pt)
+# Create callback
+c = 0.5
+affect!(integrator) = affect!(integrator, n_pt, c)
 cb = DiscreteCallback(condition, affect!)
 
-tspan = (0.0, 100.0)
-ext_f = [SVector{3,Float64}([0.0, 0.0, -10.0]) for i in 1:Int(nv(system.graph))]
+# Set parameters
+maxiters = 1000
+dt = 0.0001
+tspan = (0.0, 10.0)
 
-simulation = RodSimulation{StructuralGraphSystem{Node3DOF},Float64,Float64}(system, tspan, ext_f)
+# Set algorithm for solver
+alg = TRBDF2(autodiff = false)
 
+# Create problem
+simulation = RodSimulation{StructuralGraphSystem{Node3DOF},Float64,Float64}(system, tspan, dt, ext_f)
 prob = ODEProblem(simulation)
-system.bodies
-#alg = Rosenbrock23(autodiff=false);
-alg = RK4()
-#maxiters = 3000000
-alg = Rosenbrock23(autodiff=false)
-maxiters = 200
-abstol = 1e-1
-dt = 1.0
 
-@time sol = solve(prob, alg, dt = dt, maxiters=maxiters, callback = cb);
-#@time sol = solve(prob, alg, maxiters=maxiters);
+# Solve problem
+@time sol = solve(prob, alg, dt = simulation.dt, maxiters=maxiters, callback = cb);
+# @time sol = solve(prob, alg, maxiters=maxiters);
+
+# Plot final state
 u_final = sol.u[end][:, 1:n_pt]
-
 plot(u_final[1, :], u_final[3, :])
+
+# Select frames for animation
 itt = generate_range(100, 1, length(sol.u))
 u_red = sol.u[itt]
 

@@ -5,10 +5,6 @@ struct Node3DOF{T}<:NBodySimulator.Body
     r::SVector{3, T}
     v::SVector{3, T}
 
-    # For time integration
-    M::SMatrix{3, 3, T}
-    M_inv::SMatrix{3, 3, T}
-
     # For constraints
     constrained::Bool
     constraints::SVector{3, Bool}

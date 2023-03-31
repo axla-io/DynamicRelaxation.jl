@@ -4,6 +4,7 @@ abstract type StructureSimulation end
 struct RodSimulation{sType<:AbstractGraphSystem,tType<:Real,fType<:Real} <: StructureSimulation
     system::sType
     tspan::Tuple{tType,tType}
+    dt::tType
     ext_f::Vector{SVector{3,fType}}
 end
 
@@ -30,24 +31,41 @@ function DiffEqBase.ODEProblem(simulation::RodSimulation{<:AbstractGraphSystem})
     bodies = simulation.system.bodies
     system = simulation.system
     ext_f = simulation.ext_f
+    dt = simulation.dt
 
     function ode_system!(du, u, p, t)
         du[:, 1:n] = @view u[:, (n+1):(2n)]
-        #du[:, 1:n] = u[:, (n+1):(2n)]
-        #u[:, (n+1):(2n)] .*= 0.99
         u_v = @view u[:, 1:n]
         @inbounds for i in 1:n
             a = MVector(0.0, 0.0, 0.0)
+            s = MVector(0.0, 0.0, 0.0)
             body = bodies[i]
             #@infiltrate
-            rod_acceleration!(a, u_v, system, i)
+            rod_acceleration!(a, u_v, system, i, s)
             f_acceleration!(a, ext_f, i)
             constrain_acceleration!(a, body)
-            a = body.M_inv * a
+            s .*= dt^2.0/2.0
+            s_min!(s)
+            a = a ./ s
 
             du[:, n+i] .= a
         end
     end
 
     return ODEProblem(ode_system!, hcat(u0, v0), simulation.tspan)
+end
+
+function generate_range(n, t1, t2)
+    step = (t2 - t1) / (n - 1)
+    return [round(Int, t1 + i*step) for i in 0:n-1]
+end
+
+function condition(u, t, integrator)
+    #return (integrator.t>0.3)
+    return true
+end
+
+function affect!(integrator, n, c)
+    integrator.u[:, (n+1):(2n)] .*= c
+    #integrator.u[:, :] = integrator.u[:, :] * 0.10
 end

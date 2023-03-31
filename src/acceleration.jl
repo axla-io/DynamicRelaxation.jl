@@ -1,6 +1,6 @@
 
 
-function rod_acceleration!(a, x, system, vertex)
+function rod_acceleration!(a, x, system, vertex, s)
     graph = system.graph
     e_map = system.edgemap
     eps = system.elem_props
@@ -8,9 +8,10 @@ function rod_acceleration!(a, x, system, vertex)
     i_v = UInt8(vertex)
     for neighbor in neighbors(graph, i_v)
         ep = eps[edge_index((i_v, neighbor), e_map)]
-        rod_accelerate!(a, x_vert, @view(x[:, neighbor]), ep)
+        rod_accelerate!(a, x_vert, @view(x[:, neighbor]), ep, s)
     end
 
+    
     return nothing
 end
 
@@ -19,7 +20,14 @@ function f_acceleration!(a, ext_f, i)
     return nothing
 end
 
-function rod_accelerate!(a, x0, x1, ep)
+function s_min!(s)
+    for i in axes(s, 1)
+        s[i] = max(s[i], 1.0)
+    end
+    return nothing
+end
+
+function rod_accelerate!(a, x0, x1, ep, s)
     # Get element length
     element_vec = SVector{3,eltype(x0)}(x1 .- x0)
     current_length = norm(element_vec)
@@ -34,6 +42,7 @@ function rod_accelerate!(a, x0, x1, ep)
     N = axial_stiffness * extension  # Unit: [N]
 
     a .+= N * element_vec
+    s .+= axial_stiffness * abs.(element_vec)
 
     return nothing
 
