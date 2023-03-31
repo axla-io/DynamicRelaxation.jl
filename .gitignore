@@ -1,3 +1,4 @@
 .vscode/settings.json
 animation.gif
 examples/mwe.jl
+examples/jacobian_test.jl

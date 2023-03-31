@@ -21,8 +21,9 @@ function f_acceleration!(a, ext_f, i)
 end
 
 function s_min!(s)
+    _one = one(eltype(s))
     for i in axes(s, 1)
-        s[i] = max(s[i], 1.0)
+        s[i] = max(s[i], _one)
     end
     return nothing
 end
@@ -40,7 +41,6 @@ function rod_accelerate!(a, x0, x1, ep, s)
     # Element internal forces
     axial_stiffness = (ep.E * ep.A) / rest_length
     N = axial_stiffness * extension  # Unit: [N]
-
     a .+= N * element_vec
     s .+= axial_stiffness * abs.(element_vec)
 
@@ -51,9 +51,10 @@ end
 function constrain_acceleration!(a, body)
     if body.constrained == true
         constraints = body.constraints
+        _zero = zero(eltype(a))
         for i = 1:length(body.constraints)
             if constraints[i] == true
-                a[i] = 0.0
+                a[i] = _zero
             end
         end
     end
