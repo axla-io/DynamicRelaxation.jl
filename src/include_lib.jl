@@ -1,4 +1,5 @@
 include("elem.jl")
 include("node.jl")
 include("system.jl")
-#include("node.jl")
+include("simulation.jl")
+include("acceleration.jl")

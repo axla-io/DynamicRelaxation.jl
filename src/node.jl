@@ -11,7 +11,7 @@ struct Node3DOF{T}<:NBodySimulator.Body
 
     # For constraints
     constrained::Bool
-    constraints::SVector{7, Bool}
+    constraints::SVector{3, Bool}
 end
 
 struct Node6DOF{T}<:NBodySimulator.Body

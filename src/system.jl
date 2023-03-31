@@ -1,6 +1,6 @@
 abstract type AbstractGraphSystem <: NBodySimulator.NBodySystem end
 
-struct StructuralGraphSystem{bType<:NBodySimulator.Body} <: NBodySimulator.NBodySystem
+struct StructuralGraphSystem{bType<:NBodySimulator.Body} <: AbstractGraphSystem
     # nbody
     bodies::Vector{bType}
 
