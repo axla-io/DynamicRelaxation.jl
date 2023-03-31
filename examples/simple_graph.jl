@@ -23,7 +23,7 @@ It = 2 * Iy                 # [m^4]
 l_init = 1.0
 
 
-M = SMatrix{3, 3, Float64}(I) * 100
+M = SMatrix{3, 3, Float64}(I) * 10000
 M_inv = inv(M)
 
 ep = ElementProperties{Float64}(E, A, Iy, Iz, G, It, l_init)
