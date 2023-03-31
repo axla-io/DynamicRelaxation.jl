@@ -1,8 +1,13 @@
-using Infiltrator
-using DiffEqCallbacks
 
-include("simple_graph.jl")
+using Plots, GraphRecipes
 
+include("../src/include_lib.jl")
+
+# Define a simple graph system
+n_elem = 17
+n_pt = n_elem + 1
+graph = StaticGraph(path_graph(n_pt))
+system = default_system(graph)
 
 # Set loads
 ext_f = uniform_load([0.0, 0.0, -10.0], system)
