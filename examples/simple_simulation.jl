@@ -1,4 +1,5 @@
 using Infiltrator
+using DiffEqCallbacks
 
 include("simple_graph.jl")
 
@@ -6,15 +7,15 @@ include("simple_graph.jl")
 # Set loads
 ext_f = uniform_load([0.0, 0.0, -10.0], system)
 
-# Create callback
-c = 0.5
-affect!(integrator) = affect!(integrator, n_pt, c)
-cb = DiscreteCallback(condition, affect!)
-
 # Set parameters
 maxiters = 1000
 dt = 0.0001
 tspan = (0.0, 10.0)
+
+# Create callback
+c = 0.995
+affect!(integrator) = affect!(integrator, n_pt, c)
+cb = PeriodicCallback(affect!, dt; initial_affect = true)
 
 # Set algorithm for solver
 alg = TRBDF2(autodiff = false)
