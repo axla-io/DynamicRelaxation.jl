@@ -26,7 +26,7 @@ cb = PeriodicCallback(affect!, dt; initial_affect=true)
 alg = ImplicitMidpoint(autodiff=false)
 
 # Create problem
-simulation = RodSimulation{StructuralGraphSystem{Node6DOF},Float64,Float64}(system, tspan, dt, eltype(ext_f))
+simulation = RodSimulation{StructuralGraphSystem{Node6DOF},Float64,eltype(ext_f)}(system, tspan, dt, ext_f)
 prob = ODEProblem(simulation)
 
 # Solve problem

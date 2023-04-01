@@ -8,8 +8,7 @@ struct RodSimulation{sType<:AbstractGraphSystem,tType<:Real,fType} <: StructureS
     ext_f::Vector{fType}
 end
 
-
-function gather_bodies_initial_coordinates(simulation::RodSimulation)
+function gather_bodies_initial_coordinates(simulation::RodSimulation{StructuralGraphSystem{Node3DOF},Float64,SVector{3,Float64}})
     system = simulation.system
     bodies = system.bodies
     len = n = length(bodies)
@@ -26,7 +25,61 @@ function gather_bodies_initial_coordinates(simulation::RodSimulation)
 end
 
 
-function DiffEqBase.ODEProblem(simulation::RodSimulation{<:AbstractGraphSystem})
+function gather_bodies_initial_coordinates(simulation::RodSimulation{StructuralGraphSystem{Node6DOF},Float64,SVector{6,Float64}})
+    system = simulation.system
+    bodies = system.bodies
+    len = n = length(bodies)
+    u_len = 7 * len
+    v_len = 6 * len
+
+    u0 = zeros(u_len)
+    v0 = zeros(v_len)
+
+    for i in 1:n
+        u0[7*(i-1)+1:7*i] = bodies[i].r
+        v0[u_len+6*(i-1)+1:6*i] = bodies[i].v
+    end
+
+    (u0, v0, n, u_len, v_len)
+end
+
+
+function DiffEqBase.ODEProblem(simulation::RodSimulation{StructuralGraphSystem{Node3DOF},Float64,SVector{6,Float64}})
+    (u0, v0, n, u_len, v_len) = gather_bodies_initial_coordinates(simulation)
+    bodies = simulation.system.bodies
+    system = simulation.system
+    ext_f = simulation.ext_f
+    dt = simulation.dt
+
+    function ode_system!(du, u, p, t)
+        du[1:u_len] = @view u[u_len+1:end]
+        u_v = @view u[1:u_len]
+        u_t = eltype(u)
+        a = @MVector zeros(u_t, 7)
+        s = @MVector zeros(u_t, 7)
+        _z = zero(u_t)
+        @inbounds for i in 1:n
+            @views a .*= _z
+            @views s .*= _z
+            body = bodies[i]
+            #@infiltrate
+            rod_acceleration!(a, u_v, system, i, s)
+            f_acceleration!(a, ext_f, i)
+            constrain_acceleration!(a, body)
+            s .*= dt^2.0 / 2.0
+            s_min!(s)
+            a = a ./ s
+
+            du[:, n+i] .= a
+        end
+    end
+
+    return ODEProblem(ode_system!, vcat(u0, v0), simulation.tspan)
+end
+
+
+
+function DiffEqBase.ODEProblem(simulation::RodSimulation{StructuralGraphSystem{Node6DOF},Float64,SVector{6,Float64}})
     (u0, v0, n) = gather_bodies_initial_coordinates(simulation)
     bodies = simulation.system.bodies
     system = simulation.system
@@ -37,8 +90,8 @@ function DiffEqBase.ODEProblem(simulation::RodSimulation{<:AbstractGraphSystem})
         du[:, 1:n] = @view u[:, (n+1):(2n)]
         u_v = @view u[:, 1:n]
         u_t = eltype(u)
-        a = @MVector zeros(u_t, 3)
-        s = @MVector zeros(u_t, 3)
+        a = @MVector zeros(u_t, 7)
+        s = @MVector zeros(u_t, 7)
         _z = zero(u_t)
         @inbounds for i in 1:n
             @views a .*= _z
@@ -58,6 +111,11 @@ function DiffEqBase.ODEProblem(simulation::RodSimulation{<:AbstractGraphSystem})
 
     return ODEProblem(ode_system!, hcat(u0, v0), simulation.tspan)
 end
+
+
+
+
+
 
 function generate_range(n, t1, t2)
     step = (t2 - t1) / (n - 1)
