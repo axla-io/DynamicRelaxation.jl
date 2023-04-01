@@ -25,10 +25,20 @@ end
 
 function uniform_load(v, system)
     return [SVector{3,Float64}(v) for i in 1:Int(nv(system.graph))]
-    
+
 end
 
-function default_system(graph)
+function default_system(graph, node_type, sys_type)
+
+    if node_type == Node3DOF
+        n_dof = 3 
+
+    elseif node_type == Node6DOF
+        n_dof = 7
+    else
+        error("invalid node type")
+    end
+
     E = 210 * 1e9               # [Pa]
     Iy = Iz = 4.7619 * 1e-7     # [m^4]
     A = 4.7619 * 1e-4           # [m^2]
@@ -38,16 +48,32 @@ function default_system(graph)
 
     ep = ElementProperties{Float64}(E, A, Iy, Iz, G, It, l_init)
 
-    np_fix = Node3DOF{Float64}(@SVector(zeros(3)), @SVector(zeros(3)), true, @SVector(ones(Bool, 3)))
-    np_free = [Node3DOF{Float64}(SVector{3,Float64}([i - 1, 0.0, 0.0]), @SVector(zeros(3)), false, @SVector(zeros(Bool, 3))) for i in 2:n_pt-1]
+    if sys_type == :catenary # Is equivalent to simply supported beam for beam structure
+        #@infiltrate
+        np_fix = node_type{Float64}(@SVector(zeros(3)), true, pinned(n_dof))
+        np_free = [node_type{Float64}(SVector{3,Float64}([i - 1, 0.0, 0.0]), false, free(n_dof)) for i in 2:n_pt-1]
+        nodes = vcat(np_fix, np_free..., node_type{Float64}(SVector{3,Float64}([n_elem, 0.0, 0.0]), true, pinned(n_dof))) # Assuming same order as in graph
 
-    nodes = vcat(np_fix, np_free..., Node3DOF{Float64}(SVector{3,Float64}([n_elem, 0.0, 0.0]), @SVector(zeros(3)), true, @SVector(ones(Bool, 3)))) # Assuming same order as in graph
+    elseif sys_type == :cantilever
+        np_fix = node_type{Float64}(@SVector(zeros(3)), true, clamped(n_dof))
+        np_free = [node_type{Float64}(SVector{3,Float64}([i - 1, 0.0, 0.0]), false, free(n_dof)) for i in 2:n_pt]
+        nodes = vcat(np_fix, np_free...) # Assuming same order as in graph
+
+    elseif sys_type == :elastica
+        np_fix = node_type{Float64}(@SVector(zeros(3)), true, pinned(n_dof))
+        np_free = [node_type{Float64}(SVector{3,Float64}([i - 1, 0.0, 0.0]), false, free(n_dof)) for i in 2:n_pt-1]
+        np_roller = node_type{Float64}(SVector{3,Float64}([n_elem, 0.0, 0.0]), true, roller(n_dof, :x))
+        nodes = vcat(np_fix, np_free..., np_roller) # Assuming same order as in graph
+
+    else
+        error("invalid system type")
+    end
     eps = [ep for _e in edges(graph)] # Assuming same order as in graph
 
     edgelist = collect(edges(graph))
 
     edgemap = Dict{Tuple{UInt8,UInt8},Int}((src(e), dst(e)) => i for (i, e) in enumerate(edgelist))
 
-     StructuralGraphSystem{Node3DOF}(nodes, graph, eps, edgemap)
+    StructuralGraphSystem{node_type}(nodes, graph, eps, edgemap)
 
 end
