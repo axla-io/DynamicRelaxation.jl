@@ -48,7 +48,7 @@ function gather_bodies_initial_coordinates(simulation::RodSimulation{StructuralG
 end
 
 
-function DiffEqBase.ODEProblem(simulation::RodSimulation{StructuralGraphSystem{Node3DOF},Float64,SVector{6,Float64}})
+function DiffEqBase.ODEProblem(simulation::RodSimulation{StructuralGraphSystem{Node3DOF},Float64,SVector{3,Float64}})
     (u0, v0, n) = gather_bodies_initial_coordinates(simulation)
     bodies = simulation.system.bodies
     system = simulation.system
@@ -59,8 +59,8 @@ function DiffEqBase.ODEProblem(simulation::RodSimulation{StructuralGraphSystem{N
         du[:, 1:n] = @view u[:, (n+1):(2n)]
         u_v = @view u[:, 1:n]
         u_t = eltype(u)
-        a = @MVector zeros(u_t, 7)
-        s = @MVector zeros(u_t, 7)
+        a = @MVector zeros(u_t, 3)
+        s = @MVector zeros(u_t, 3)
         _z = zero(u_t)
         @inbounds for i in 1:n
             @views a .*= _z
@@ -101,26 +101,26 @@ function DiffEqBase.ODEProblem(simulation::RodSimulation{StructuralGraphSystem{N
         du[dx_ids] = @view u[v_ids]
 
         # Set rotation vels
-        dr = @view du[dr_ids]
-        ω = @view u[ω_ids]
-        set_rotation_vels!(dr, ω, n)
+        #dr = @view du[dr_ids]
+        #ω = @view u[ω_ids]
+        #set_rotation_vels!(dr, ω, n)
 
         # Initialize velocity and acceleration
         a = @MVector zeros(u_t, 3)
         s = @MVector zeros(u_t, 3)
-        j = @MVector ones(u_t, 3) # change and also add j update
-        τ = @MVector zeros(u_t, 3) # change and also add τ update
+        #j = @MVector ones(u_t, 3) # change and also add j update
+        #τ = @MVector zeros(u_t, 3) # change and also add τ update
 
         @inbounds for i in 1:n
             # Reset accelerations
             @views a .*= _z
             @views s .*= _z
-            dω_id = 3*(i-1) + 1
-            ω_i = SVector{3,u_t}(ω[dω_id:dω_id+2])
+            #dω_id = 3*(i-1) + 1
+            #ω_i = SVector{3,u_t}(ω[dω_id:dω_id+2])
 
             body = bodies[i]
             rod_acceleration!(a, u_v, system, i, s)
-            #f_acceleration!(a, ext_f, i)
+            f_acceleration!(a, ext_f, i)
             constrain_acceleration!(a, body)
 
             # Apply momentum and masses
@@ -130,12 +130,12 @@ function DiffEqBase.ODEProblem(simulation::RodSimulation{StructuralGraphSystem{N
 
             #@infiltrate
             # Apply moment of inertia
-            dω = (τ - j .* scross(ω_i,  ω_i)) ./ j
+            #dω = (τ - j .* scross(ω_i,  ω_i)) ./ j
 
             # Update accelerations
             d_id = (u_len + 1) + 6 * (i - 1) + 1
             @views du[d_id:d_id+2] .= a
-            @views du[d_id+3:d_id+5] .= dω
+            #@views du[d_id+3:d_id+5] .= dω
 
         end
     end
@@ -174,8 +174,7 @@ function get_vel_ids(u_len, v_len)
     return dx_ids, dr_ids, v_ids, ω_ids
 end
 
-function get_state(u)
-    u_len = length(u)
+function get_state(u, u_len)
     x_ids = 1:7:u_len
     y_ids = 2:7:u_len
     z_ids = 3:7:u_len

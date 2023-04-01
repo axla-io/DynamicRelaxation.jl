@@ -9,12 +9,13 @@ n_pt = n_elem + 1
 graph = StaticGraph(path_graph(n_pt))
 system = default_system(graph, Node6DOF, :catenary)
 
+
 # Set loads
 #ext_f = point_loads([Pz(-10, system) ], [n_pt], system)
 ext_f = uniform_load(Pz(-10, system), system)
 
 # Set parameters
-maxiters = 5
+maxiters = 500
 dt = 0.001
 tspan = (0.0, 10.0)
 
@@ -34,13 +35,13 @@ simulation = RodSimulation{StructuralGraphSystem{Node6DOF},Float64,eltype(ext_f)
 prob = ODEProblem(simulation)
 
 # Solve problem
-@time sol = solve(prob, alg, dt=simulation.dt, maxiters=maxiters, callback = cb);
+@time sol = solve(prob, alg, dt=simulation.dt, maxiters=maxiters);
 #@profview solve(prob, alg, dt = simulation.dt, maxiters=maxiters, callback = cb);
 
 # Plot final state
-u_final = get_state(sol.u[end])
+u_final = get_state(sol.u[end], u_len)
 plot(u_final[1, :], u_final[3, :])
-
+asfsdf
 # Select frames for animation
 itt = generate_range(100, 1, length(sol.u))
 u_red = sol.u[itt]

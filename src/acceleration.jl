@@ -24,7 +24,7 @@ function rod_acceleration!(a, x, system::StructuralGraphSystem{Node6DOF}, vertex
     i_v = UInt8(vertex)
     for neighbor in neighbors(graph, i_v)
         ep = eps[edge_index((i_v, neighbor), e_map)]
-        rod_accelerate!(a, x_vert, @view(x[7*(neighbor-1)+1:7*neighbor]), ep, s, system)
+        rod_accelerate!(a, x_vert, @view(x[7*(neighbor-1)+1:7*neighbor]), ep, s)
     end
 
     
@@ -32,7 +32,9 @@ function rod_acceleration!(a, x, system::StructuralGraphSystem{Node6DOF}, vertex
 end
 
 function f_acceleration!(a, ext_f, i)
-    a .+= ext_f[i]
+    for j = 1:3 
+        a .+= ext_f[i][j]
+    end
     return nothing
 end
 
@@ -46,7 +48,7 @@ end
 
 
 
-function rod_accelerate!(a, x0, x1, ep, s, system::StructuralGraphSystem{Node3DOF})
+function rod_accelerate!(a, x0, x1, ep, s)
     # Get element length
     element_vec = SVector{3,eltype(x0)}(x1[1] - x0[1], x1[2] - x0[2], x1[3] - x0[3])
     current_length = norm(element_vec)
@@ -66,26 +68,6 @@ function rod_accelerate!(a, x0, x1, ep, s, system::StructuralGraphSystem{Node3DO
 
 end
 
-
-function rod_accelerate!(a, x0, x1, ep, s, system::StructuralGraphSystem{Node6DOF})
-    # Get element length
-    element_vec = SVector{3,eltype(x0)}(x1[1] - x0[1], x1[2] - x0[2], x1[3] - x0[3])
-    current_length = norm(element_vec)
-    rest_length = ep.l_init
-
-    # +++ AXIAL +++
-    extension = current_length - rest_length # Unit: [m]
-
-    # +++ FORCES +++
-    # Element internal forces
-    axial_stiffness = (ep.E * ep.A) / rest_length
-    N = axial_stiffness * extension  # Unit: [N]
-    @views a[1:3] .+= N * element_vec
-    @views s[1:3] .+= axial_stiffness * abs.(element_vec)
-
-    return nothing
-
-end
 
 function constrain_acceleration!(a, body)
     if body.constrained == true

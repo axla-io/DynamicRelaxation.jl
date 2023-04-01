@@ -23,16 +23,15 @@ affect!(integrator) = affect!(integrator, n_pt, c)
 cb = PeriodicCallback(affect!,  dt; initial_affect = true)
 
 # Set algorithm for solver
-alg = ImplicitMidpoint(autodiff = true)
+alg = RK4()
 
 # Create problem
-simulation = RodSimulation{StructuralGraphSystem{Node3DOF},Float64,Float64}(system, tspan, dt, ext_f)
+simulation = RodSimulation{StructuralGraphSystem{Node3DOF},Float64,eltype(ext_f)}(system, tspan, dt, ext_f)
 prob = ODEProblem(simulation)
 
 # Solve problem
 @time sol = solve(prob, alg, dt = simulation.dt, maxiters=maxiters, callback = cb);
 #@profview solve(prob, alg, dt = simulation.dt, maxiters=maxiters, callback = cb);
-
 
 # Plot final state
 u_final = sol.u[end][:, 1:n_pt]
