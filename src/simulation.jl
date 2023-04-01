@@ -104,7 +104,8 @@ function DiffEqBase.ODEProblem(simulation::RodSimulation{StructuralGraphSystem{N
         # Initialize velocity and acceleration
         a = @MVector zeros(u_t, 3)
         s = @MVector zeros(u_t, 3)
-        #dω = @MVector zeros(u_t, 3)
+        j = @MVector ones(u_t, 3) # change and also add j update
+        τ = @MVector zeros(u_t, 3) # change and also add τ update
 
         @inbounds for i in 1:n
             # Reset accelerations
