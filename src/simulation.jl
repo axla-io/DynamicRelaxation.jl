@@ -81,6 +81,7 @@ function DiffEqBase.ODEProblem(simulation::RodSimulation{StructuralGraphSystem{N
     (u0, v0, n, u_len, v_len) = gather_bodies_initial_coordinates(simulation)
     uv0 = vcat(u0, v0)
     (dx_ids, dr_ids, v_ids, ω_ids) = get_vel_ids(u_len, v_len)
+
     bodies = simulation.system.bodies
     system = simulation.system
     ext_f = simulation.ext_f
@@ -98,7 +99,7 @@ function DiffEqBase.ODEProblem(simulation::RodSimulation{StructuralGraphSystem{N
         # Set rotation vels
         dr = @view du[dr_ids]
         ω = @view u[ω_ids]
-        set_rotation_vels!(dr, ω)
+        set_rotation_vels!(dr, ω, n)
 
         # Initialize velocity and acceleration
         a = @MVector zeros(u_t, 3)
