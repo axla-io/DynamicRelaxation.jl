@@ -125,7 +125,7 @@ function DiffEqBase.ODEProblem(simulation::RodSimulation{StructuralGraphSystem{N
 
             # Apply momentum and masses
             apply_jns!(a, s, dt)
-            #apply_jns!(τ, j, dt)
+            apply_jns!(τ, j, dt)
 
             #@infiltrate
             # Apply moment of inertia
