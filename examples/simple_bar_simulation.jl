@@ -10,7 +10,7 @@ graph = StaticGraph(path_graph(n_pt))
 system = default_system(graph, Node3DOF, :catenary)
 
 # Set loads
-ext_f = uniform_load([0.0, 0.0, -10.0], system)
+ext_f = uniform_load(Pz(-10, system), system)
 
 # Set parameters
 maxiters = 500

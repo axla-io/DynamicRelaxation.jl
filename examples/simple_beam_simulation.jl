@@ -19,6 +19,10 @@ maxiters = 500
 dt = 0.001
 tspan = (0.0, 10.0)
 
+# Create problem
+simulation = RodSimulation{StructuralGraphSystem{Node6DOF},Float64,eltype(ext_f)}(system, tspan, dt, ext_f)
+prob = ODEProblem(simulation)
+
 # Create callback TODO: find a better way
 c = 0.9
 (u0, v0, n, u_len, v_len) = gather_bodies_initial_coordinates(simulation)
@@ -30,25 +34,21 @@ cb = PeriodicCallback(affect!, dt; initial_affect=true)
 #alg = ImplicitMidpoint(autodiff=false)
 alg = RK4()
 
-# Create problem
-simulation = RodSimulation{StructuralGraphSystem{Node6DOF},Float64,eltype(ext_f)}(system, tspan, dt, ext_f)
-prob = ODEProblem(simulation)
-
 # Solve problem
-@time sol = solve(prob, alg, dt=simulation.dt, maxiters=maxiters);
+@time sol = solve(prob, alg, dt=simulation.dt, maxiters=maxiters, callback = cb);
 #@profview solve(prob, alg, dt = simulation.dt, maxiters=maxiters, callback = cb);
 
 # Plot final state
 u_final = get_state(sol.u[end], u_len)
 plot(u_final[1, :], u_final[3, :])
-asfsdf
+
 # Select frames for animation
 itt = generate_range(100, 1, length(sol.u))
 u_red = sol.u[itt]
 
 # Loop over the time values and create a plot for each frame
 anim = @animate for i in axes(u_red, 1)
-    u_final = get_state(u_red[i])
+    u_final = get_state(u_red[i], u_len)
     plot(u_final[1, :], u_final[3, :])
 end
 

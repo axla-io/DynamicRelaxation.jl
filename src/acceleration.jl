@@ -32,9 +32,11 @@ function rod_acceleration!(a, x, system::StructuralGraphSystem{Node6DOF}, vertex
 end
 
 function f_acceleration!(a, ext_f, i)
-    for j = 1:3 
-        a .+= ext_f[i][j]
+    for j = 1:3
+        a[j] += ext_f[i][j]
+
     end
+    
     return nothing
 end
 

@@ -2,3 +2,4 @@
 animation.gif
 examples/mwe.jl
 examples/jacobian_test.jl
+examples/reset_infiltrate.jl
