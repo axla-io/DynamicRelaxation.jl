@@ -36,15 +36,19 @@ function DiffEqBase.ODEProblem(simulation::RodSimulation{<:AbstractGraphSystem})
     function ode_system!(du, u, p, t)
         du[:, 1:n] = @view u[:, (n+1):(2n)]
         u_v = @view u[:, 1:n]
+        u_t = eltype(u)
+        a = @MVector zeros(u_t, 3)
+        s = @MVector zeros(u_t, 3)
+        _z = zero(u_t)
         @inbounds for i in 1:n
-            a = MVector(0.0, 0.0, 0.0)
-            s = MVector(0.0, 0.0, 0.0)
+            @views a .*= _z
+            @views s .*= _z
             body = bodies[i]
             #@infiltrate
             rod_acceleration!(a, u_v, system, i, s)
             f_acceleration!(a, ext_f, i)
             constrain_acceleration!(a, body)
-            s .*= dt^2.0/2.0
+            s .*= dt^2.0 / 2.0
             s_min!(s)
             a = a ./ s
 
@@ -57,7 +61,7 @@ end
 
 function generate_range(n, t1, t2)
     step = (t2 - t1) / (n - 1)
-    return [round(Int, t1 + i*step) for i in 0:n-1]
+    return [round(Int, t1 + i * step) for i in 0:n-1]
 end
 
 function condition(u, t, integrator)
@@ -66,6 +70,6 @@ function condition(u, t, integrator)
 end
 
 function affect!(integrator, n, c)
-    integrator.u[:, (n+1):(2n)] .*= c
+    @views integrator.u[:, (n+1):(2n)] .*= c
     #integrator.u[:, :] = integrator.u[:, :] * 0.10
 end
