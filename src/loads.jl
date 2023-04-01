@@ -12,9 +12,11 @@ My(c, system::StructuralGraphSystem{Node6DOF}) = c * [ 0.0, 0.0, 0.0, 0.0, 1.0, 
 Mz(c, system::StructuralGraphSystem{Node6DOF}) = c * [ 0.0, 0.0, 0.0, 0.0, 0.0, 1.0]
 
 
-function uniform_load(v, system)
-    return [SVector{3,Float64}(v) for i in 1:Int(nv(system.graph))]
+function uniform_load(v::Vector{T}, system) where {T<:Real}
+    N = length(v)
+    return [SVector{N,T}(v) for i in 1:Int(nv(system.graph))]
 end
+
 
 function point_loads(vs, is, system)
     if length(vs) > 0

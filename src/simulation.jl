@@ -36,8 +36,12 @@ function gather_bodies_initial_coordinates(simulation::RodSimulation{StructuralG
     v0 = zeros(v_len)
 
     for i in 1:n
-        u0[7*(i-1)+1:7*i] = bodies[i].r
-        v0[u_len+6*(i-1)+1:6*i] = bodies[i].v
+        bx_id = 7*(i-1)+1
+        bv_id = 6*(i-1)+1
+        u0[bx_id:bx_id+2] = bodies[i].r
+        u0[bx_id+3:bx_id+6] = bodies[i].q
+        v0[bv_id:bv_id+2] = bodies[i].v
+        v0[bv_id+3:bv_id+5] = bodies[i].ω
     end
 
     (u0, v0, n, u_len, v_len)
@@ -116,7 +120,7 @@ function DiffEqBase.ODEProblem(simulation::RodSimulation{StructuralGraphSystem{N
 
             body = bodies[i]
             rod_acceleration!(a, u_v, system, i, s)
-            f_acceleration!(a, ext_f, i)
+            #f_acceleration!(a, ext_f, i)
             constrain_acceleration!(a, body)
 
             # Apply momentum and masses
@@ -124,13 +128,14 @@ function DiffEqBase.ODEProblem(simulation::RodSimulation{StructuralGraphSystem{N
             s_min!(s)
             a = a ./ s
 
+            #@infiltrate
             # Apply moment of inertia
-            dω = (τ - scross(ω_i, j .* ω_i)) ./ j
+            dω = (τ - j .* scross(ω_i,  ω_i)) ./ j
 
             # Update accelerations
             d_id = (u_len + 1) + 6 * (i - 1) + 1
-            @views x[d_id:d_id+2] .= a
-            @views x[d_id+3:d_id+6] .= dω
+            @views du[d_id:d_id+2] .= a
+            @views du[d_id+3:d_id+5] .= dω
 
         end
     end
@@ -154,6 +159,11 @@ function affect!(integrator, n, c)
     #integrator.u[:, :] = integrator.u[:, :] * 0.10
 end
 
+function affect!(integrator, n::AbstractVector, c)
+    @views integrator.u[n] .*= c
+    #integrator.u[:, :] = integrator.u[:, :] * 0.10
+end
+
 function get_vel_ids(u_len, v_len)
 
     dx_ids = get_ids(1, 3, 7, u_len)
@@ -162,6 +172,17 @@ function get_vel_ids(u_len, v_len)
     ω_ids = get_ids(u_len + 3, 3, 6, u_len + v_len)
 
     return dx_ids, dr_ids, v_ids, ω_ids
+end
+
+function get_state(u)
+    u_len = length(u)
+    x_ids = 1:7:u_len
+    y_ids = 2:7:u_len
+    z_ids = 3:7:u_len
+
+    state = hcat(u[x_ids], u[y_ids], u[z_ids])'
+
+    return state
 end
 
 function get_ids(start, step_inc, offset, finish)
