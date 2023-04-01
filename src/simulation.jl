@@ -104,15 +104,14 @@ function DiffEqBase.ODEProblem(simulation::RodSimulation{StructuralGraphSystem{N
         # Initialize velocity and acceleration
         a = @MVector zeros(u_t, 3)
         s = @MVector zeros(u_t, 3)
-        dq = @MVector zeros(u_t, 4)
-        dω = @MVector zeros(u_t, 3)
+        #dω = @MVector zeros(u_t, 3)
 
         @inbounds for i in 1:n
             # Reset accelerations
             @views a .*= _z
             @views s .*= _z
-            @views dq .*= _z
-
+            dω_id = 3*(i-1) + 1
+            @views dω .= ω[dω_id:dω_id+2]
 
             body = bodies[i]
             rod_acceleration!(a, u_v, system, i, s)
@@ -124,6 +123,9 @@ function DiffEqBase.ODEProblem(simulation::RodSimulation{StructuralGraphSystem{N
             s_min!(s)
             a = a ./ s
 
+            # Apply moment of inertia
+            dω .= (τ - scross(dω, j .* dω)) ./ j
+            
             # Update accelerations
             d_id = (u_len + 1) + 6 * (i - 1) + 1
             @views x[d_id:d_id+2] .= a
