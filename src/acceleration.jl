@@ -30,7 +30,7 @@ end
 
 function rod_accelerate!(a, x0, x1, ep, s)
     # Get element length
-    element_vec = SVector{3,eltype(x0)}(x1 .- x0)
+    element_vec = SVector{3,eltype(x0)}(x1[1] - x0[1], x1[2] - x0[2], x1[3] - x0[3])
     current_length = norm(element_vec)
     rest_length = ep.l_init
 

@@ -6,6 +6,7 @@ using NBodySimulator
 using StaticGraphs
 
 using Infiltrator
+using JET
 
 include("elem.jl")
 include("node.jl")

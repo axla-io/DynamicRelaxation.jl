@@ -13,17 +13,17 @@ system = default_system(graph)
 ext_f = uniform_load([0.0, 0.0, -10.0], system)
 
 # Set parameters
-maxiters = 1000
-dt = 0.0001
+maxiters = 500
+dt = 0.001
 tspan = (0.0, 10.0)
 
 # Create callback
-c = 0.995
+c = 0.9
 affect!(integrator) = affect!(integrator, n_pt, c)
-cb = PeriodicCallback(affect!, dt; initial_affect = true)
+cb = PeriodicCallback(affect!,  dt; initial_affect = true)
 
 # Set algorithm for solver
-alg = TRBDF2(autodiff = false)
+alg = ImplicitMidpoint(autodiff = true)
 
 # Create problem
 simulation = RodSimulation{StructuralGraphSystem{Node3DOF},Float64,Float64}(system, tspan, dt, ext_f)
@@ -31,7 +31,8 @@ prob = ODEProblem(simulation)
 
 # Solve problem
 @time sol = solve(prob, alg, dt = simulation.dt, maxiters=maxiters, callback = cb);
-# @time sol = solve(prob, alg, maxiters=maxiters);
+#@profview solve(prob, alg, dt = simulation.dt, maxiters=maxiters, callback = cb);
+
 
 # Plot final state
 u_final = sol.u[end][:, 1:n_pt]
