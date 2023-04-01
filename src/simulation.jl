@@ -1,11 +1,11 @@
 
 abstract type StructureSimulation end
 
-struct RodSimulation{sType<:AbstractGraphSystem,tType<:Real,fType<:Real} <: StructureSimulation
+struct RodSimulation{sType<:AbstractGraphSystem,tType<:Real,fType} <: StructureSimulation
     system::sType
     tspan::Tuple{tType,tType}
     dt::tType
-    ext_f::Vector{SVector{3,fType}}
+    ext_f::Vector{fType}
 end
 
 

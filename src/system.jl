@@ -23,10 +23,7 @@ function edge_index(e::Tuple{UInt8,UInt8}, e_map::Dict{Tuple{UInt8,UInt8},Int})
     return res
 end
 
-function uniform_load(v, system)
-    return [SVector{3,Float64}(v) for i in 1:Int(nv(system.graph))]
 
-end
 
 function default_system(graph, node_type, sys_type)
 

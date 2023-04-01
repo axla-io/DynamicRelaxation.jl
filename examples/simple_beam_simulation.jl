@@ -10,7 +10,7 @@ graph = StaticGraph(path_graph(n_pt))
 system = default_system(graph, Node6DOF, :catenary)
 
 # Set loads
-ext_f = uniform_load([0.0, 0.0, -10.0], system)
+ext_f = point_loads([Pz(-10, system) ], [n_pt], system)
 
 # Set parameters
 maxiters = 500
@@ -20,17 +20,17 @@ tspan = (0.0, 10.0)
 # Create callback
 c = 0.9
 affect!(integrator) = affect!(integrator, n_pt, c)
-cb = PeriodicCallback(affect!,  dt; initial_affect = true)
+cb = PeriodicCallback(affect!, dt; initial_affect=true)
 
 # Set algorithm for solver
-alg = ImplicitMidpoint(autodiff = true)
+alg = ImplicitMidpoint(autodiff=false)
 
 # Create problem
-simulation = RodSimulation{StructuralGraphSystem{Node3DOF},Float64,Float64}(system, tspan, dt, ext_f)
+simulation = RodSimulation{StructuralGraphSystem{Node6DOF},Float64,Float64}(system, tspan, dt, eltype(ext_f))
 prob = ODEProblem(simulation)
 
 # Solve problem
-@time sol = solve(prob, alg, dt = simulation.dt, maxiters=maxiters, callback = cb);
+@time sol = solve(prob, alg, dt=simulation.dt, maxiters=maxiters, callback=cb);
 #@profview solve(prob, alg, dt = simulation.dt, maxiters=maxiters, callback = cb);
 
 
