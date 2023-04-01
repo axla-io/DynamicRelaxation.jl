@@ -124,9 +124,8 @@ function DiffEqBase.ODEProblem(simulation::RodSimulation{StructuralGraphSystem{N
             constrain_acceleration!(a, τ, body)
 
             # Apply momentum and masses
-            s .*= dt^2.0 / 2.0
-            s_min!(s)
-            a = a ./ s
+            apply_jns!(a, s, dt)
+            #apply_jns!(τ, j, dt)
 
             #@infiltrate
             # Apply moment of inertia
@@ -147,6 +146,13 @@ end
 function generate_range(n, t1, t2)
     step = (t2 - t1) / (n - 1)
     return [round(Int, t1 + i * step) for i in 0:n-1]
+end
+
+function apply_jns!(a, s, dt)
+    s .*= dt^2.0 / 2.0
+    s_min!(s)
+    a .= a ./ s
+    return nothing
 end
 
 function condition(u, t, integrator)
