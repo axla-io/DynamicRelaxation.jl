@@ -80,7 +80,7 @@ end
 function DiffEqBase.ODEProblem(simulation::RodSimulation{StructuralGraphSystem{Node6DOF},Float64,SVector{6,Float64}})
     (u0, v0, n, u_len, v_len) = gather_bodies_initial_coordinates(simulation)
     uv0 = vcat(u0, v0)
-    (dx_ids, v_ids, dr_ids, ω_ids) = get_vel_ids(uv0, u_len)
+    (dx_ids, dr_ids, v_ids, ω_ids) = get_vel_ids(u_len, v_len)
     bodies = simulation.system.bodies
     system = simulation.system
     ext_f = simulation.ext_f
@@ -153,13 +153,13 @@ function affect!(integrator, n, c)
 end
 
 function get_vel_ids(u_len, v_len)
-    
+
     dx_ids = get_ids(1, 3, 7, u_len)
     dr_ids = get_ids(4, 4, 7, u_len)
     v_ids = get_ids(u_len + 1, 3, 6, u_len + v_len)
     ω_ids = get_ids(u_len + 3, 3, 6, u_len + v_len)
 
-    return dx_ids, v_ids, dr_ids, ω_ids
+    return dx_ids, dr_ids, v_ids, ω_ids
 end
 
 function get_ids(start, step_inc, offset, finish)
