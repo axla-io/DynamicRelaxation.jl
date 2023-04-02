@@ -27,8 +27,14 @@ prob = ODEProblem(simulation)
 c = 0.7
 (u0, v0, n, u_len, v_len) = gather_bodies_initial_coordinates(simulation)
 (dx_ids, dr_ids, v_ids, ω_ids) = get_vel_ids(u_len, v_len)
-velocitydecay!(integrator) = velocitydecay!(integrator, v_ids, c)
-cb = PeriodicCallback(velocitydecay!, 1 * dt; initial_affect=true)
+velocitydecay!(integrator) = velocitydecay!(integrator, vcat(v_ids, ω_ids), c)
+cb1 = PeriodicCallback(velocitydecay!, 1 * dt; initial_affect=true)
+
+tol = 1e-5
+ke_condition(u, t, integrator) = ke_condition(u, t, integrator, tol, vcat(v_ids, ω_ids))
+cb2 = ContinuousCallback(ke_condition,velocityreset!)
+
+cb = CallbackSet(cb1, cb2)
 
 # Set algorithm for solver
 #alg = Rosenbrock23(autodiff=true)

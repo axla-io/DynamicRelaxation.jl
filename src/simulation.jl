@@ -162,21 +162,6 @@ function apply_jns!(a, s, dt)
     return nothing
 end
 
-function condition(u, t, integrator)
-    #return (integrator.t>0.3)
-    return true
-end
-
-function affect!(integrator, n, c)
-    @views integrator.u[:, (n+1):(2n)] .*= c
-    #integrator.u[:, :] = integrator.u[:, :] * 0.10
-end
-
-function affect!(integrator, n::AbstractVector, c)
-    @views integrator.u[n] .*= c
-    #integrator.u[:, :] = integrator.u[:, :] * 0.10
-end
-
 function get_vel_ids(u_len, v_len)
 
     dx_ids = get_ids(1, 3, 7, u_len)
