@@ -1,6 +1,6 @@
 
 
-function rod_acceleration!(a, x, system, vertex, s)
+function rod_acceleration!(a, x, system::StructuralGraphSystem{Node3DOF}, vertex, s)
     graph = system.graph
     e_map = system.edgemap
     eps = system.elem_props
@@ -11,14 +11,18 @@ function rod_acceleration!(a, x, system, vertex, s)
         rod_accelerate!(a, x_vert, @view(x[:, neighbor]), ep, s)
     end
 
-    
+
     return nothing
 end
 
+
 function f_acceleration!(a, ext_f, i)
-    a .+= ext_f[i]
+    for j = 1:3
+        a[j] += ext_f[i][j]
+    end
     return nothing
 end
+
 
 function s_min!(s)
     _one = one(eltype(s))
@@ -27,6 +31,7 @@ function s_min!(s)
     end
     return nothing
 end
+
 
 function rod_accelerate!(a, x0, x1, ep, s)
     # Get element length
