@@ -12,11 +12,11 @@ system = default_system(graph, Node6DOF, :catenary)
 
 # Set loads
 #ext_f = point_loads([Pz(-10, system) ], [n_pt], system)
-ext_f = uniform_load(Pz(-10, system), system)
+ext_f = uniform_load(Pz(-10_000, system), system)
 
 # Set parameters
 maxiters = 500
-dt = 0.001
+dt = 0.01
 tspan = (0.0, 10.0)
 
 # Create problem
@@ -32,7 +32,7 @@ cb = PeriodicCallback(affect!, 10 * dt; initial_affect=true)
 
 # Set algorithm for solver
 #alg = Rosenbrock23(autodiff=true)
-alg = TRBDF2(autodiff=false)
+alg = RK4()
 
 # Solve problem
 @time sol = solve(prob, alg, dt=simulation.dt, maxiters=maxiters, callback = cb);
