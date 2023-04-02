@@ -8,15 +8,15 @@ function rod_accelerate!(a, τ, u0, u1, body_i, body_j, ep, s, j)
     # Get element length
     element_vec = SVector{3,eltype(u0)}(u1[1] - u0[1], u1[2] - u0[2], u1[3] - u0[3])
     current_length = norm(element_vec)
-    rest_length = l_init
+    rest_length = ep.l_init
     # +++ ROTATIONS +++
 
     # Get the current positions/orientations of the nodes (global: related to InitialOrientation)
     qs_i = u0[4]
     qs_j = u1[4]
 
-    qv_i = SVector{3,eltype(x0)}(u0[5], u0[6], u0[7])
-    qv_j = SVector{3,eltype(x0)}(u1[5], u1[6], u1[7])
+    qv_i = SVector{3,eltype(u0)}(u0[5], u0[6], u0[7])
+    qv_j = SVector{3,eltype(u0)}(u1[5], u1[6], u1[7])
 
     cs_i = body_i.cs
     cs_j = body_j.cs
@@ -99,20 +99,20 @@ function rod_accelerate!(a, τ, u0, u1, body_i, body_j, ep, s, j)
 
     # Update stiffnesses
     s .+= axial_stiffness * abs.(element_vec)
-    update_j!(y0 + y1, z0 + z1, x0 + x1, j, E, Iy, Iz, G, It)
+    update_j!(y0 + y1, z0 + z1, x0 + x1, j, E, Iy, Iz, G, It, inv_rest_length)
 
 
     return nothing
 end
 
-function update_j!(y_m, z_m, x_m, j, E, Iy, Iz, G, It)
+function update_j!(y_m, z_m, x_m, j, E, Iy, Iz, G, It, inv_rest_length)
 
-    y_m ./= norm(y_m)
-    z_m ./= norm(z_m)
-    x_m ./= norm(x_m)
+    y_m = y_m / norm(y_m)
+    z_m = z_m / norm(z_m)
+    x_m = x_m / norm(x_m)
 
     # Update stiffness
-    j .+= (E .* (Iy .* abs.(y_m) + Iz .* abs.(z_m)) + G .* It .* abs.(x_m)) ./ L
+    j .+= (E .* (Iy .* abs.(y_m) + Iz .* abs.(z_m)) + G .* It .* abs.(x_m)) * inv_rest_length
 
     return nothing
 end
