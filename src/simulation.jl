@@ -119,7 +119,7 @@ function DiffEqBase.ODEProblem(simulation::RodSimulation{StructuralGraphSystem{N
             ω_i = SVector{3,u_t}(ω[dω_id:dω_id+2])
 
             body = bodies[i]
-            rod_acceleration!(a, τ, u_v, system, i, s, j)
+            rod_acceleration!(a, τ, u_v, system, body, i, s, j)
             f_acceleration!(a, τ, ext_f, i)
             constrain_acceleration!(a, τ, body)
 
