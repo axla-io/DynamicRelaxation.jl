@@ -28,19 +28,23 @@ ssprob = SteadyStateProblem(prob)
 c = 0.7
 (u0, v0, n, u_len, v_len) = gather_bodies_initial_coordinates(simulation)
 (dx_ids, dr_ids, v_ids, ω_ids) = get_vel_ids(u_len, v_len)
-affect!(integrator) = affect!(integrator, v_ids, c)
-cb = PeriodicCallback(affect!, 1 * dt; initial_affect=true)
+velocitydecay!(integrator) = velocitydecay!(integrator, v_ids, c)
+cb = PeriodicCallback(velocitydecay!, 1 * dt; initial_affect=true)
+
+# Create a callback to do kinetic damping
+
+# Set termination condition
+cond = KETerminationCondition(v_ids, abstol = 1e-3)
 
 # Set algorithm for solver
 #alg = Rosenbrock23(autodiff=false)
 alg = RK4()
 
 # Solve problem
-@time sol = solve(ssprob, DynamicSS(Rodas5()),  maxiters=maxiters, callback = cb);
-@time sol = solve(ssprob, SSRootfind(),  maxiters=maxiters, callback = cb);
+@time sol = solve(ssprob, DynamicSS(alg, termination_condition = cond),  maxiters=maxiters, callback = cb);
+#@time sol = solve(ssprob, SSRootfind(),  maxiters=maxiters, callback = cb);
 #@profview solve(prob, alg, dt = simulation.dt, maxiters=maxiters, callback = cb);
-a=CallbackSet(cb1,cb2);
-ssprob
+
 # Plot final state
 u_final = get_state(sol.u, u_len)
 plot(u_final[1, :], u_final[3, :])
