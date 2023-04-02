@@ -126,7 +126,7 @@ result_ode = DiffEqFlux.sciml_train(l1loss, result_ode.minimizer,
 # VISUALIZE
 # -----------------------------------------------------
 p_1 = result_ode.minimizer
-loss(p_1)
+l1loss(p_1)
 # Solve problem
 @time sol_pred = solve(remake(prob, p=p_1), alg, dt=simulation.dt, maxiters=maxiters, callback=cb);
 
