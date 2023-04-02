@@ -12,11 +12,11 @@ function set_rotation_vels!(dr::AbstractVector{T}, ω, n) where T<: Real
     end
 end
 
-function scross(a::AbstractVector{T}, b::AbstractVector{T}) where {T<:Real}
+function scross(a::AbstractVector{T1}, b::AbstractVector{T2}) where {T1<:Real, T2<:Real}
     a1, a2, a3 = a
     b1, b2, b3 = b
 
-    SVector{3,T}(a2 * b3 - a3 * b2, a3 * b1 - a1 * b3, a1 * b2 - a2 * b1)
+    SVector{3,T1}(a2 * b3 - a3 * b2, a3 * b1 - a1 * b3, a1 * b2 - a2 * b1)
 end
 
 # Ported from https://github.com/eayvali/Integrating-Rigid-Body-Rotations/blob/master/code/f_q_dot.m
