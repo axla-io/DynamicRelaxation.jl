@@ -35,3 +35,12 @@ function get_W(w::SVector{3,T}) where {T<:Real}
         w[3] w[2] -w[1] _z]
     return W
 end
+
+# Quaternion rotation of vector, from: https://gamedev.stackexchange.com/questions/28395/rotating-vector3-by-a-quaternion
+
+function q_vec_rot(qs, qv, v)
+
+    return 2.0 * dot(qv, v) .* qv + 
+    (qs^2 - dot(qv, qv)) .* v + 
+    2.0 * qs .* scross(qv, v)
+end
