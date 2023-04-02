@@ -29,7 +29,7 @@ c = 0.7
 (u0, v0, n, u_len, v_len) = gather_bodies_initial_coordinates(simulation)
 (dx_ids, dr_ids, v_ids, ω_ids) = get_vel_ids(u_len, v_len)
 velocitydecay!(integrator) = velocitydecay!(integrator, vcat(v_ids, ω_ids), c)
-cb = PeriodicCallback(velocitydecay!, 3 * dt; initial_affect=true)
+cb = PeriodicCallback(velocitydecay!, 2 * dt; initial_affect=true)
 
 # Create a callback to do kinetic damping
 
