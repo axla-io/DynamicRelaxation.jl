@@ -15,7 +15,7 @@ system = default_system(graph, Node6DOF, :catenary)
 ext_f = uniform_load(Pz(-10, system), system)
 
 # Set parameters
-maxiters = 5
+maxiters = 500
 dt = 0.001
 tspan = (0.0, 10.0)
 

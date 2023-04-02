@@ -12,7 +12,7 @@ function set_rotation_vels!(dr::AbstractVector{T}, ω, n) where T<: Real
     end
 end
 
-function scross(a::SVector{3,T}, b::SVector{3,T}) where {T<:Real}
+function scross(a::AbstractVector{T}, b::AbstractVector{T}) where {T<:Real}
     a1, a2, a3 = a
     b1, b2, b3 = b
 

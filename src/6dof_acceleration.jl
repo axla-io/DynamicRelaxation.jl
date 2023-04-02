@@ -61,6 +61,11 @@ function rod_accelerate!(a, τ, u0, u1, body_i, body_j, ep, s, j)
     # +++ MOMENTS +++
     M_y0 = ((N * r_30) * ((4.0 * theta_y0) - theta_y1)) + (((E * Iy) * inv_rest_length) * ((4.0 * theta_y0) + (2.0 * theta_y1)))           #Unit: [Nm]
     M_z0 = ((N * r_30) * ((4.0 * theta_z0) - theta_z1)) + (((E * Iz) * inv_rest_length) * ((4.0 * theta_z0) + (2.0 * theta_z1)))           #Unit: [Nm]
+    
+    M_y1 = ((N * r_30) * ((4.0 * theta_y1) - theta_y0)) + (((E * Iy) * inv_rest_length) * ((4.0 * theta_y1) + (2.0 * theta_y0)))           #Unit: [Nm]
+    M_z1 = ((N * r_30) * ((4.0 * theta_z1) - theta_z0)) + (((E * Iz) * inv_rest_length) * ((4.0 * theta_z1) + (2.0 * theta_z0)))           #Unit: [Nm]
+
+    
     M_x = ((G * It) * inv_rest_length) * theta_x            #Unit: [Nm]
 
     # Threshhold moments and forces
@@ -70,6 +75,10 @@ function rod_accelerate!(a, τ, u0, u1, body_i, body_j, ep, s, j)
         abs(M_x) < eps(Float64) ? M_x = 0.0 : M_x = M_x
      =#
 
+     #Force start
+    F0_x = inv_rest_length * ((N * element_vec[1]) + (M_y0 * z0[1]) - (M_z0 * y0[1]) + (M_y1 * z1[1]) - (M_z1 * y1[1]))
+    F0_y = inv_rest_length * ((N * element_vec[2]) + (M_y0 * z0[2]) - (M_z0 * y0[2]) + (M_y1 * z1[2]) - (M_z1 * y1[2]))
+    F0_z = inv_rest_length * ((N * element_vec[3]) + (M_y0 * z0[3]) - (M_z0 * y0[3]) + (M_y1 * z1[3]) - (M_z1 * y1[3]))
 
     #Moment start
     #i=1, j=2, k=3
@@ -91,7 +100,9 @@ function rod_accelerate!(a, τ, u0, u1, body_i, body_j, ep, s, j)
     M0z_neg = (((M_y0 * element_vec[1] * z0[2]) * inv_rest_length) - ((M_z0 * element_vec[1] * y0[2]) * inv_rest_length) + ((M_x * ((y0[2] * z1[1]) - (z0[2] * y1[1]))) * 0.5))
 
     # Update forces
-    a .+= N * element_vec
+    a[1] += F0_x
+    a[2] += F0_y
+    a[3] += F0_z
 
     τ[1] += M0x_pos + M0x_neg
     τ[2] += M0y_pos + M0y_neg
