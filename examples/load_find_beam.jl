@@ -57,11 +57,24 @@ function predict(p)
 end
 
 # Create loss function
-function loss(p)
+function l2loss(p)
     prediction = predict(p)
-    loss = sum(abs2, prediction .- u_final)
+    loss = sum(abs, prediction .- u_final)
     return loss, prediction
 end
+
+function l1loss(p)
+    prediction = predict(p)
+    loss = sum(abs, prediction .- u_final)
+    return loss, prediction
+end
+
+# Initial guess of p
+p = [0.3]
+sol_pred_init = solve(remake(prob, p=p), alg, dt=simulation.dt, maxiters=maxiters, callback=cb)
+# Plot final state
+u_pred_init = get_state(sol_pred_init.u[end], u_len)
+
 
 # Callback function to observe training
 list_plots = []
@@ -82,8 +95,11 @@ callback = function (p, l, pred)
     sol_pred = solve(remake(prob, p=p), alg, dt=simulation.dt, maxiters=maxiters, callback=cb)
     # Plot final state
     u_pred = get_state(sol_pred.u[end], u_len)
-    plt = plot(u_final[1, :], u_final[3, :], label="Ground Truth")
-    plot!(plt, u_pred[1, :], u_pred[3, :], label="Prediction")
+    plt = plot(u_final[1, :], u_final[3, :], lw = 1.5, label="Ground Truth")
+    plot!(plt, u_pred_init[1, :], u_pred_init[3, :], lw = 1.5, label="Initial Prediction")
+    plot!(plt, u_pred[1, :], u_pred[3, :], lw = 1.5, label="Prediction, iter. $iter")
+    p_pred = round(p[1], digits = 4)
+    plot!(plt, zlims = (-0.3, 0.0), title = "\nLoad Finding, \$p_{\\rm{true}}\$ = 1.0, \$p_{\\rm{pred}}\$ = $p_pred")
 
     push!(list_plots, plt)
 
@@ -93,8 +109,6 @@ callback = function (p, l, pred)
     return false
 end
 
-# Initial guess of p
-p = [0.9]
 
 # OPTIMIZE!
 # -----------------------------------------------------
@@ -102,19 +116,23 @@ p = [0.9]
 #= result_ode = DiffEqFlux.sciml_train(loss, p,
     BFGS(initial_stepnorm=0.0001), maxiters=10) =#
 
-result_ode = DiffEqFlux.sciml_train(loss, p,
-    Adam(0.1), maxiters=500, cb=callback)
+result_ode = DiffEqFlux.sciml_train(l2loss, p,
+    Adam(0.03), maxiters=20, cb=callback)
+
+result_ode = DiffEqFlux.sciml_train(l1loss, result_ode.minimizer,
+    BFGS(initial_stepnorm=0.0001), maxiters=10, cb=callback)
 
 
 # VISUALIZE
 # -----------------------------------------------------
-
+p_1 = result_ode.minimizer
+loss(p_1)
 # Solve problem
-@time sol_pred = solve(remake(prob, p=result_ode.minimizer), alg, dt=simulation.dt, maxiters=maxiters, callback=cb);
+@time sol_pred = solve(remake(prob, p=p_1), alg, dt=simulation.dt, maxiters=maxiters, callback=cb);
 
 # Plot final state
 u_pred = get_state(sol_pred.u[end], u_len)
 plot(u_final[1, :], u_final[3, :], label="Ground Truth")
 plot!(u_pred[1, :], u_pred[3, :], label="Prediction")
 
-animate(list_plots)
+animate(list_plots, "load_finding.gif",fps=2)
