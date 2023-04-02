@@ -24,11 +24,11 @@ simulation = RodSimulation{StructuralGraphSystem{Node6DOF},Float64,eltype(ext_f)
 prob = ODEProblem(simulation)
 
 # Create callback TODO: find a better way
-c = 0.1
+c = 0.7
 (u0, v0, n, u_len, v_len) = gather_bodies_initial_coordinates(simulation)
 (dx_ids, dr_ids, v_ids, ω_ids) = get_vel_ids(u_len, v_len)
 affect!(integrator) = affect!(integrator, v_ids, c)
-cb = PeriodicCallback(affect!, 10 * dt; initial_affect=true)
+cb = PeriodicCallback(affect!, 1 * dt; initial_affect=true)
 
 # Set algorithm for solver
 #alg = Rosenbrock23(autodiff=true)
