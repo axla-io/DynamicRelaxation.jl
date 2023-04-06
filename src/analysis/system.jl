@@ -70,6 +70,6 @@ function default_system(graph, node_type, sys_type, n_pt)
 
     edgemap = Dict{Tuple{UInt8,UInt8},Int}((src(e), dst(e)) => i for (i, e) in enumerate(edgelist))
 
-    StructuralGraphSystem{node_type}(nodes, graph, eps, edgemap)
+    StructuralGraphSystem{node_type{Float64}}(nodes, graph, eps, edgemap)
 
 end
