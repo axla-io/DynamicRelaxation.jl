@@ -99,7 +99,7 @@ callback = function (p, l, pred)
     plot!(plt, u_pred_init[1, :], u_pred_init[3, :], lw = 1.5, label="Initial Prediction")
     plot!(plt, u_pred[1, :], u_pred[3, :], lw = 1.5, label="Prediction, iter. $iter")
     p_pred = round(p[1], digits = 4)
-    plot!(plt, zlims = (-0.3, 0.0), title = "\nLoad Finding, \$p_{\\rm{true}}\$ = 1.0, \$p_{\\rm{pred}}\$ = $p_pred")
+    plot!(plt, ylims = (-0.3, 0.0), title = "\nLoad Finding, \$p_{\\rm{true}}\$ = 1.0, \$p_{\\rm{pred}}\$ = $p_pred")
 
     push!(list_plots, plt)
 
