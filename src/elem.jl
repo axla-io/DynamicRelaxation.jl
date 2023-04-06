@@ -8,4 +8,3 @@ struct ElementProperties{T}
     It::T   # [m^4]
     l_init::T   # [m]
 end
-
