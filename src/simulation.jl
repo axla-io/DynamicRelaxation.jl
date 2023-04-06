@@ -7,7 +7,7 @@ struct RodSimulation{sType<:AbstractGraphSystem,tType<:Real,fType} <: StructureS
     ext_f::Vector{fType}
 end
 
-function get_u0(simulation::RodSimulation{StructuralGraphSystem{Node3DOF},Float64,SVector{3,Float64}})
+function get_u0(simulation::RodSimulation{StructuralGraphSystem{Node3DOF{T}},Float64,SVector{3,Float64}}) where T
     system = simulation.system
     bodies = system.bodies
     len = n = length(bodies)
@@ -23,7 +23,7 @@ function get_u0(simulation::RodSimulation{StructuralGraphSystem{Node3DOF},Float6
     (u0, v0, n)
 end
 
-function get_u0(simulation::RodSimulation{StructuralGraphSystem{Node6DOF},Float64,SVector{6,Float64}})
+function get_u0(simulation::RodSimulation{StructuralGraphSystem{Node6DOF{T}},Float64,SVector{6,Float64}})where T
     system = simulation.system
     bodies = system.bodies
     len = n = length(bodies)
@@ -45,7 +45,7 @@ function get_u0(simulation::RodSimulation{StructuralGraphSystem{Node6DOF},Float6
     (u0, v0, n, u_len, v_len)
 end
 
-function DiffEqBase.ODEProblem(simulation::RodSimulation{StructuralGraphSystem{Node3DOF},Float64,SVector{3,Float64}})
+function DiffEqBase.ODEProblem(simulation::RodSimulation{StructuralGraphSystem{Node3DOF{T}},Float64,SVector{3,Float64}}) where T
     (u0, v0, n) = get_u0(simulation)
     bodies = simulation.system.bodies
     system = simulation.system
@@ -77,7 +77,7 @@ function DiffEqBase.ODEProblem(simulation::RodSimulation{StructuralGraphSystem{N
     return ODEProblem(ode_system!, hcat(u0, v0), simulation.tspan)
 end
 
-function DiffEqBase.ODEProblem(simulation::RodSimulation{StructuralGraphSystem{Node6DOF},Float64,SVector{6,Float64}})
+function DiffEqBase.ODEProblem(simulation::RodSimulation{StructuralGraphSystem{Node6DOF{T}},Float64,SVector{6,Float64}}) where T
     (u0, v0, n, u_len, v_len) = get_u0(simulation)
     uv0 = vcat(u0, v0)
     (dx_ids, dr_ids, v_ids, ω_ids) = get_vel_ids(u_len, v_len)
@@ -114,9 +114,12 @@ function DiffEqBase.ODEProblem(simulation::RodSimulation{StructuralGraphSystem{N
             @views τ .*= _z
             @views j .*= _z
             dω_id = 3 * (i - 1) + 1
-            ω_i = SVector{3,u_t}(ω[dω_id:dω_id+2])
+            ω_i = SVector{3,u_t}(ω[dω_id], ω[dω_id]+1, ω[dω_id]+2)
 
             body = bodies[i]
+            #= if isdefined(Main, :Infiltrator)
+                Main.infiltrate(@__MODULE__, Base.@locals, @__FILE__, @__LINE__)
+              end  =#
             rod_acceleration!(a, τ, u_v, system, body, i, s, j)
             f_acceleration!(a, τ, ext_f, i)
             constrain_acceleration!(a, τ, body)
