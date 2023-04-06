@@ -99,13 +99,12 @@ function DiffEqBase.ODEProblem(simulation::RodSimulation{StructuralGraphSystem{N
         # Set rotation vels
         dr = @view du[dr_ids]
         ω = @view u[ω_ids]
-        set_rotation_vels!(dr, ω, n)
 
         # Initialize velocity and acceleration
         a = @MVector zeros(u_t, 3)
         s = @MVector zeros(u_t, 3)
-        τ = @MVector zeros(u_t, 3) # change and also add τ update
-        j = @MVector zeros(u_t, 3) # change and also add j update
+        τ = @MVector zeros(u_t, 3)
+        j = @MVector zeros(u_t, 3)
 
         @inbounds for i in 1:n
             # Reset accelerations
@@ -115,6 +114,7 @@ function DiffEqBase.ODEProblem(simulation::RodSimulation{StructuralGraphSystem{N
             @views j .*= _z
             dω_id = 3 * (i - 1) + 1
             ω_i = SVector{3,u_t}(ω[dω_id], ω[dω_id]+1, ω[dω_id]+2)
+            set_rotation_vels!(dr, ω_i, i)
 
             body = bodies[i]
             #= if isdefined(Main, :Infiltrator)
