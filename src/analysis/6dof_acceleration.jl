@@ -98,7 +98,7 @@ function rod_accelerate!(a, τ, u0, u1, body_i, body_j, ep, s, j)
 
     # Update stiffnesses
     s .+= axial_stiffness * abs.(element_vec)
-    update_j!(y0 / norm(y0) + y1/ norm(y1), z0/ norm(z0) + z1/ norm(z1), x0/ norm(x0) + x1/ norm(x1), j, E, Iy, Iz, G, It, inv_rest_length)
+    update_j!(y0 + y1, z0 + z1, x0 + x1, j, E, Iy, Iz, G, It, inv_rest_length)
 
     return nothing
 end
@@ -135,14 +135,14 @@ function f_acceleration!(a, τ, ext_f, i)
     return nothing
 end
 
-function rod_acceleration!(a, τ, x, system::StructuralGraphSystem{Node6DOF}, body_i, vertex, s, j)
+function rod_acceleration!(a, τ, x, system::StructuralGraphSystem{Node6DOF{T}}, body_i, vertex, s, j) where T
     graph = system.graph
     e_map = system.edgemap
     eps = system.elem_props
     x_vert = @view x[7*(vertex-1)+1:7*vertex]
     i_v = UInt8(vertex)
     for neighbor in neighbors(graph, i_v)
-        body_j = system.bodies[neighbor]
+        body_j = system.bodies[neighbor]::Node6DOF{Float64}
         ep = eps[edge_index((i_v, neighbor), e_map)]
         rod_accelerate!(a, τ, x_vert, @view(x[7*(neighbor-1)+1:7*neighbor]), body_i, body_j, ep, s, j)
     end
