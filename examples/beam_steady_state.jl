@@ -1,7 +1,7 @@
 
 using Plots, GraphRecipes
 
-include("../src/include_lib.jl")
+using DynamicRelaxation
 
 # Define a simple graph system
 n_elem = 17
@@ -26,7 +26,7 @@ ssprob = SteadyStateProblem(prob)
 
 # Create callback TODO: find a better way
 c = 0.7
-(u0, v0, n, u_len, v_len) = gather_bodies_initial_coordinates(simulation)
+(u0, v0, n, u_len, v_len) = get_u0(simulation)
 (dx_ids, dr_ids, v_ids, ω_ids) = get_vel_ids(u_len, v_len)
 velocitydecay!(integrator) = velocitydecay!(integrator, vcat(v_ids, ω_ids), c)
 cb = PeriodicCallback(velocitydecay!, 3 * dt; initial_affect=true)

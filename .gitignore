@@ -7,3 +7,4 @@ load_finding.gif
 DynamicRelaxation.jl.code-workspace
 load_finding.mp4
 src/steady_state/experimental/
+Manifest.toml

@@ -8,7 +8,7 @@ struct RodSimulation{sType<:AbstractGraphSystem,tType<:Real,fType} <: StructureS
     ext_f::Vector{fType}
 end
 
-function gather_bodies_initial_coordinates(simulation::RodSimulation{StructuralGraphSystem{Node3DOF},Float64,SVector{3,Float64}})
+function get_u0(simulation::RodSimulation{StructuralGraphSystem{Node3DOF},Float64,SVector{3,Float64}})
     system = simulation.system
     bodies = system.bodies
     len = n = length(bodies)
@@ -25,7 +25,7 @@ function gather_bodies_initial_coordinates(simulation::RodSimulation{StructuralG
 end
 
 
-function gather_bodies_initial_coordinates(simulation::RodSimulation{StructuralGraphSystem{Node6DOF},Float64,SVector{6,Float64}})
+function get_u0(simulation::RodSimulation{StructuralGraphSystem{Node6DOF},Float64,SVector{6,Float64}})
     system = simulation.system
     bodies = system.bodies
     len = n = length(bodies)
@@ -49,7 +49,7 @@ end
 
 
 function DiffEqBase.ODEProblem(simulation::RodSimulation{StructuralGraphSystem{Node3DOF},Float64,SVector{3,Float64}})
-    (u0, v0, n) = gather_bodies_initial_coordinates(simulation)
+    (u0, v0, n) = get_u0(simulation)
     bodies = simulation.system.bodies
     system = simulation.system
     ext_f = simulation.ext_f
@@ -82,7 +82,7 @@ function DiffEqBase.ODEProblem(simulation::RodSimulation{StructuralGraphSystem{N
 end
 
 function DiffEqBase.ODEProblem(simulation::RodSimulation{StructuralGraphSystem{Node6DOF},Float64,SVector{6,Float64}})
-    (u0, v0, n, u_len, v_len) = gather_bodies_initial_coordinates(simulation)
+    (u0, v0, n, u_len, v_len) = get_u0(simulation)
     uv0 = vcat(u0, v0)
     (dx_ids, dr_ids, v_ids, ω_ids) = get_vel_ids(u_len, v_len)
 

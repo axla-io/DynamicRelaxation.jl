@@ -14,8 +14,7 @@ function f_acceleration!(a, τ, ext_f, i, p)
     return nothing
 end
 
-# Change this!
-function gather_bodies_initial_coordinates(simulation::LoadScaleRodSimulation{StructuralGraphSystem{Node6DOF},Float64,SVector{6,Float64}})
+function get_u0(simulation::LoadScaleRodSimulation{StructuralGraphSystem{Node6DOF},Float64,SVector{6,Float64}})
     system = simulation.system
     bodies = system.bodies
     len = n = length(bodies)
@@ -40,7 +39,7 @@ end
 
 
 function DiffEqBase.ODEProblem(simulation::LoadScaleRodSimulation{StructuralGraphSystem{Node6DOF},Float64,SVector{6,Float64}}, p)
-    (u0, v0, n, u_len, v_len) = gather_bodies_initial_coordinates(simulation)
+    (u0, v0, n, u_len, v_len) = get_u0(simulation)
     uv0 = vcat(u0, v0)
     (dx_ids, dr_ids, v_ids, ω_ids) = get_vel_ids(u_len, v_len)
 

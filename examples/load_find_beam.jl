@@ -3,7 +3,7 @@ using Flux, Optim, DiffEqFlux, DiffEqSensitivity
 
 # GENERATE DATA
 # -----------------------------------------------------
-include("../src/include_lib.jl")
+using DynamicRelaxation
 
 # Define a simple graph system
 n_elem = 17
@@ -28,7 +28,7 @@ prob = ODEProblem(simulation, p_true)
 
 # Create callback TODO: find a better way
 c = 0.7
-(_u0, _v0, n, u_len, v_len) = gather_bodies_initial_coordinates(simulation)
+(_u0, _v0, n, u_len, v_len) = get_u0(simulation)
 (dx_ids, dr_ids, v_ids, ω_ids) = get_vel_ids(u_len, v_len)
 velocitydecay!(integrator) = velocitydecay!(integrator, v_ids, c)
 cb = PeriodicCallback(velocitydecay!, 1 * dt; initial_affect=true)

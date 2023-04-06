@@ -1,6 +1,6 @@
 using Plots, GraphRecipes
 
-include("../src/include_lib.jl")
+using DynamicRelaxation
 
 # Define a simple graph and plot
 n_elem = 17

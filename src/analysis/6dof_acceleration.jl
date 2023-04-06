@@ -68,13 +68,6 @@ function rod_accelerate!(a, τ, u0, u1, body_i, body_j, ep, s, j)
     
     M_x = ((G * It) * inv_rest_length) * theta_x            #Unit: [Nm]
 
-    # Threshhold moments and forces
-    #=     abs(N) < eps(Float64) ? N = 0.0 : N = N
-        abs(M_y0) < eps(Float64) ? M_y0 = 0.0 : M_y0 = M_y0
-        abs(M_z0) < eps(Float64) ? M_z0 = 0.0 : M_z0 = M_z0
-        abs(M_x) < eps(Float64) ? M_x = 0.0 : M_x = M_x
-     =#
-
      #Force start
     F0_x = inv_rest_length * ((N * element_vec[1]) + (M_y0 * z0[1]) - (M_z0 * y0[1]) + (M_y1 * z1[1]) - (M_z1 * y1[1]))
     F0_y = inv_rest_length * ((N * element_vec[2]) + (M_y0 * z0[2]) - (M_z0 * y0[2]) + (M_y1 * z1[2]) - (M_z1 * y1[2]))
