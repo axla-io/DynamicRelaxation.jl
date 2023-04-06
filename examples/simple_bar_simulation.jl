@@ -19,8 +19,8 @@ tspan = (0.0, 10.0)
 
 # Create callback
 c = 0.9
-affect!(integrator) = affect!(integrator, n_pt, c)
-cb = PeriodicCallback(affect!,  dt; initial_affect = true)
+velocitydecay!(integrator) = velocitydecay!(integrator, n_pt, c)
+cb = PeriodicCallback(velocitydecay!,  dt; initial_affect = true)
 
 # Set algorithm for solver
 alg = RK4()

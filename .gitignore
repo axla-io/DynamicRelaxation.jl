@@ -4,3 +4,6 @@ examples/mwe.jl
 examples/jacobian_test.jl
 examples/reset_infiltrate.jl
 load_finding.gif
+DynamicRelaxation.jl.code-workspace
+load_finding.mp4
+src/steady_state/experimental/

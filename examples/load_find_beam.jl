@@ -30,8 +30,8 @@ prob = ODEProblem(simulation, p_true)
 c = 0.7
 (_u0, _v0, n, u_len, v_len) = gather_bodies_initial_coordinates(simulation)
 (dx_ids, dr_ids, v_ids, ω_ids) = get_vel_ids(u_len, v_len)
-affect!(integrator) = affect!(integrator, v_ids, c)
-cb = PeriodicCallback(affect!, 1 * dt; initial_affect=true)
+velocitydecay!(integrator) = velocitydecay!(integrator, v_ids, c)
+cb = PeriodicCallback(velocitydecay!, 1 * dt; initial_affect=true)
 
 # Set algorithm for solver
 #alg = Rosenbrock23(autodiff=true)
@@ -99,7 +99,7 @@ callback = function (p, l, pred)
     plot!(plt, u_pred_init[1, :], u_pred_init[3, :], lw = 1.5, label="Initial Prediction")
     plot!(plt, u_pred[1, :], u_pred[3, :], lw = 1.5, label="Prediction, iter. $iter")
     p_pred = round(p[1], digits = 4)
-    plot!(plt, zlims = (-0.3, 0.0), title = "\nLoad Finding, \$p_{\\rm{true}}\$ = 1.0, \$p_{\\rm{pred}}\$ = $p_pred")
+    plot!(plt, ylims = (-0.3, 0.0), title = "\nLoad Finding, \$p_{\\rm{true}}\$ = 1.0, \$p_{\\rm{pred}}\$ = $p_pred")
 
     push!(list_plots, plt)
 
@@ -126,7 +126,7 @@ result_ode = DiffEqFlux.sciml_train(l1loss, result_ode.minimizer,
 # VISUALIZE
 # -----------------------------------------------------
 p_1 = result_ode.minimizer
-loss(p_1)
+l1loss(p_1)
 # Solve problem
 @time sol_pred = solve(remake(prob, p=p_1), alg, dt=simulation.dt, maxiters=maxiters, callback=cb);
 
