@@ -1,5 +1,4 @@
 abstract type AbstractGraphSystem <: NBodySimulator.NBodySystem end
-
 struct StructuralGraphSystem{bType<:NBodySimulator.Body} <: AbstractGraphSystem
     # nbody
     bodies::Vector{bType}
@@ -22,8 +21,6 @@ function edge_index(e::Tuple{UInt8,UInt8}, e_map::Dict{Tuple{UInt8,UInt8},Int})
     end
     return res
 end
-
-
 
 function default_system(graph, node_type, sys_type, n_pt)
 

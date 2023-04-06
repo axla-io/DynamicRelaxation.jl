@@ -1,19 +1,25 @@
 using Flux, Optim, DiffEqFlux, DiffEqSensitivity
 
+using Plots, GraphRecipes
+
+using DynamicRelaxation
+
+using Graphs
+using StaticGraphs
+using DiffEqCallbacks
+using DifferentialEquations
+using SteadyStateDiffEq
 
 # GENERATE DATA
 # -----------------------------------------------------
-using DynamicRelaxation
 
 # Define a simple graph system
 n_elem = 17
 n_pt = n_elem + 1
 graph = StaticGraph(path_graph(n_pt))
-system = default_system(graph, Node6DOF, :catenary)
-
+system = default_system(graph, Node6DOF, :catenary, n_pt)
 
 # Set loads
-#ext_f = point_loads([Pz(-10, system) ], [n_pt], system)
 ext_f = uniform_load(Pz(-10_000, system), system)
 
 # Set parameters
@@ -26,25 +32,23 @@ p_true = [1.0]
 simulation = LoadScaleRodSimulation{StructuralGraphSystem{Node6DOF},Float64,eltype(ext_f)}(system, tspan, dt, ext_f)
 prob = ODEProblem(simulation, p_true)
 
-# Create callback TODO: find a better way
+# Create decay callback
 c = 0.7
 (_u0, _v0, n, u_len, v_len) = get_u0(simulation)
 (dx_ids, dr_ids, v_ids, ω_ids) = get_vel_ids(u_len, v_len)
-velocitydecay!(integrator) = velocitydecay!(integrator, v_ids, c)
-cb = PeriodicCallback(velocitydecay!, 1 * dt; initial_affect=true)
+v_decay!(integrator) = velocitydecay!(integrator, v_ids, c)
+cb = PeriodicCallback(v_decay!, 1 * dt; initial_affect=true)
 
 # Set algorithm for solver
-#alg = Rosenbrock23(autodiff=true)
 alg = RK4()
 
 # Solve problem, corresponding to p = 1.0
 @time sol = solve(prob, alg, dt=simulation.dt, maxiters=maxiters, callback=cb);
-#@profview solve(prob, alg, dt = simulation.dt, maxiters=maxiters, callback = cb);
 
 # Extract final state
 u_final = get_state(sol.u[end], u_len)
 
-# Extract initial state (maybe a bit hacky)
+# Extract initial state
 u0 = sol.u[1]
 
 # SET UP OPTIMIZATION
@@ -75,7 +79,6 @@ sol_pred_init = solve(remake(prob, p=p), alg, dt=simulation.dt, maxiters=maxiter
 # Plot final state
 u_pred_init = get_state(sol_pred_init.u[end], u_len)
 
-
 # Callback function to observe training
 list_plots = []
 iter = 0
@@ -103,18 +106,13 @@ callback = function (p, l, pred)
 
     push!(list_plots, plt)
 
-
     # Tell sciml_train to not halt the optimization. If return true, then
     # optimization stops.
     return false
 end
 
-
 # OPTIMIZE!
 # -----------------------------------------------------
-
-#= result_ode = DiffEqFlux.sciml_train(loss, p,
-    BFGS(initial_stepnorm=0.0001), maxiters=10) =#
 
 result_ode = DiffEqFlux.sciml_train(l2loss, p,
     Adam(0.03), maxiters=20, cb=callback)
@@ -122,11 +120,10 @@ result_ode = DiffEqFlux.sciml_train(l2loss, p,
 result_ode = DiffEqFlux.sciml_train(l1loss, result_ode.minimizer,
     BFGS(initial_stepnorm=0.0001), maxiters=10, cb=callback)
 
-
 # VISUALIZE
 # -----------------------------------------------------
 p_1 = result_ode.minimizer
-l1loss(p_1)
+
 # Solve problem
 @time sol_pred = solve(remake(prob, p=p_1), alg, dt=simulation.dt, maxiters=maxiters, callback=cb);
 

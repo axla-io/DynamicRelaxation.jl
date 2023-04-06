@@ -1,4 +1,3 @@
-
 get_properties(ep) = (ep.E, ep.A, ep.Iy, ep.Iz, ep.G, ep.It)
 
 function rod_accelerate!(a, τ, u0, u1, body_i, body_j, ep, s, j)
@@ -9,9 +8,8 @@ function rod_accelerate!(a, τ, u0, u1, body_i, body_j, ep, s, j)
     element_vec = SVector{3,eltype(u0)}(u1[1] - u0[1], u1[2] - u0[2], u1[3] - u0[3])
     current_length = norm(element_vec)
     rest_length = ep.l_init
-    # +++ ROTATIONS +++
 
-    # Get the current positions/orientations of the nodes (global: related to InitialOrientation)
+    # +++ ROTATIONS +++
     qs_i = u0[4]
     qs_j = u1[4]
 
@@ -22,8 +20,6 @@ function rod_accelerate!(a, τ, u0, u1, body_i, body_j, ep, s, j)
     cs_j = body_j.cs
 
     # Get local endplane orientations
-    # Should be quatmultiply
-    
     y0 = q_vec_rot(qs_i, qv_i, cs_i.y)
     z0 = q_vec_rot(qs_i, qv_i, cs_i.z)
     x0 = q_vec_rot(qs_i, qv_i, cs_i.x)
@@ -65,7 +61,6 @@ function rod_accelerate!(a, τ, u0, u1, body_i, body_j, ep, s, j)
     M_y1 = ((N * r_30) * ((4.0 * theta_y1) - theta_y0)) + (((E * Iy) * inv_rest_length) * ((4.0 * theta_y1) + (2.0 * theta_y0)))           #Unit: [Nm]
     M_z1 = ((N * r_30) * ((4.0 * theta_z1) - theta_z0)) + (((E * Iz) * inv_rest_length) * ((4.0 * theta_z1) + (2.0 * theta_z0)))           #Unit: [Nm]
 
-    
     M_x = ((G * It) * inv_rest_length) * theta_x            #Unit: [Nm]
 
      #Force start
@@ -103,25 +98,17 @@ function rod_accelerate!(a, τ, u0, u1, body_i, body_j, ep, s, j)
 
     # Update stiffnesses
     s .+= axial_stiffness * abs.(element_vec)
-    update_j!(y0 + y1, z0 + z1, x0 + x1, j, E, Iy, Iz, G, It, inv_rest_length)
-
+    update_j!(y0 / norm(y0) + y1/ norm(y1), z0/ norm(z0) + z1/ norm(z1), x0/ norm(x0) + x1/ norm(x1), j, E, Iy, Iz, G, It, inv_rest_length)
 
     return nothing
 end
 
 function update_j!(y_m, z_m, x_m, j, E, Iy, Iz, G, It, inv_rest_length)
-
-    y_m = y_m / norm(y_m)
-    z_m = z_m / norm(z_m)
-    x_m = x_m / norm(x_m)
-
     # Update stiffness
     j .+= (E .* (Iy .* abs.(y_m) + Iz .* abs.(z_m)) + G .* It .* abs.(x_m)) * inv_rest_length
 
     return nothing
 end
-
-
 
 function constrain_acceleration!(a, τ, body)
     if body.constrained == true
@@ -148,7 +135,6 @@ function f_acceleration!(a, τ, ext_f, i)
     return nothing
 end
 
-
 function rod_acceleration!(a, τ, x, system::StructuralGraphSystem{Node6DOF}, body_i, vertex, s, j)
     graph = system.graph
     e_map = system.edgemap
@@ -160,7 +146,6 @@ function rod_acceleration!(a, τ, x, system::StructuralGraphSystem{Node6DOF}, bo
         ep = eps[edge_index((i_v, neighbor), e_map)]
         rod_accelerate!(a, τ, x_vert, @view(x[7*(neighbor-1)+1:7*neighbor]), body_i, body_j, ep, s, j)
     end
-
 
     return nothing
 end

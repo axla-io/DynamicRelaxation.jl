@@ -1,4 +1,3 @@
-
 abstract type StructureSimulation end
 
 struct RodSimulation{sType<:AbstractGraphSystem,tType<:Real,fType} <: StructureSimulation
@@ -24,7 +23,6 @@ function get_u0(simulation::RodSimulation{StructuralGraphSystem{Node3DOF},Float6
     (u0, v0, n)
 end
 
-
 function get_u0(simulation::RodSimulation{StructuralGraphSystem{Node6DOF},Float64,SVector{6,Float64}})
     system = simulation.system
     bodies = system.bodies
@@ -47,7 +45,6 @@ function get_u0(simulation::RodSimulation{StructuralGraphSystem{Node6DOF},Float6
     (u0, v0, n, u_len, v_len)
 end
 
-
 function DiffEqBase.ODEProblem(simulation::RodSimulation{StructuralGraphSystem{Node3DOF},Float64,SVector{3,Float64}})
     (u0, v0, n) = get_u0(simulation)
     bodies = simulation.system.bodies
@@ -66,7 +63,6 @@ function DiffEqBase.ODEProblem(simulation::RodSimulation{StructuralGraphSystem{N
             @views a .*= _z
             @views s .*= _z
             body = bodies[i]
-            #@infiltrate
             rod_acceleration!(a, u_v, system, i, s)
             f_acceleration!(a, ext_f, i)
             constrain_acceleration!(a, body)
@@ -120,10 +116,6 @@ function DiffEqBase.ODEProblem(simulation::RodSimulation{StructuralGraphSystem{N
             dω_id = 3 * (i - 1) + 1
             ω_i = SVector{3,u_t}(ω[dω_id:dω_id+2])
 
-            #= if i == 2
-                @infiltrate
-            end =#
-
             body = bodies[i]
             rod_acceleration!(a, τ, u_v, system, body, i, s, j)
             f_acceleration!(a, τ, ext_f, i)
@@ -132,7 +124,6 @@ function DiffEqBase.ODEProblem(simulation::RodSimulation{StructuralGraphSystem{N
             # Apply momentum and masses
             apply_jns!(a, s, dt)
 
-            #@infiltrate
             # Apply moment of inertia
             j .*= dt^2.0 / 2.0
             s_min!(j)
@@ -148,7 +139,6 @@ function DiffEqBase.ODEProblem(simulation::RodSimulation{StructuralGraphSystem{N
 
     return ODEProblem(ode_system!, uv0, simulation.tspan)
 end
-
 
 function generate_range(n, t1, t2)
     step = (t2 - t1) / (n - 1)
@@ -190,4 +180,3 @@ function get_ids(start, step_inc, offset, finish)
     end
     return hcat(rangelist...)'[:]
 end
-

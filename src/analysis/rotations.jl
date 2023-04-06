@@ -1,4 +1,3 @@
-
 function set_rotation_vels!(dr::AbstractVector{T}, ω, n) where T<: Real
     for i in 1:n
         dr_id = 4 * (i - 1) + 1

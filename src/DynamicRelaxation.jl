@@ -31,7 +31,7 @@ include("optimization/load_finding.jl")
 export ElementProperties, CoordinateSystem, Node3DOF, Node6DOF
 
 # Callbacks
-export velocitydecay!
+export velocitydecay!, velocityreset!, ke_condition
 
 # Constraints
 export clamped, free, pinned, roller

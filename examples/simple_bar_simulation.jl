@@ -1,13 +1,17 @@
+using DynamicRelaxation
+
+using Graphs
+using StaticGraphs
+using DiffEqCallbacks
+using DifferentialEquations
 
 using Plots, GraphRecipes
-
-using DynamicRelaxation
 
 # Define a simple graph system
 n_elem = 17
 n_pt = n_elem + 1
 graph = StaticGraph(path_graph(n_pt))
-system = default_system(graph, Node3DOF, :catenary)
+system = default_system(graph, Node3DOF, :catenary, n_pt)
 
 # Set loads
 ext_f = uniform_load(Pz(-10, system), system)
@@ -19,8 +23,8 @@ tspan = (0.0, 10.0)
 
 # Create callback
 c = 0.9
-velocitydecay!(integrator) = velocitydecay!(integrator, n_pt, c)
-cb = PeriodicCallback(velocitydecay!,  dt; initial_affect = true)
+v_decay!(integrator) = velocitydecay!(integrator, n_pt, c)
+cb = PeriodicCallback(v_decay!,  dt; initial_affect = true)
 
 # Set algorithm for solver
 alg = RK4()
@@ -31,7 +35,6 @@ prob = ODEProblem(simulation)
 
 # Solve problem
 @time sol = solve(prob, alg, dt = simulation.dt, maxiters=maxiters, callback = cb);
-#@profview solve(prob, alg, dt = simulation.dt, maxiters=maxiters, callback = cb);
 
 # Plot final state
 u_final = sol.u[end][:, 1:n_pt]

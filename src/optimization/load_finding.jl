@@ -1,4 +1,3 @@
-
 struct LoadScaleRodSimulation{sType<:AbstractGraphSystem,tType<:Real,fType} <: StructureSimulation
     system::sType
     tspan::Tuple{tType,tType}
@@ -35,8 +34,6 @@ function get_u0(simulation::LoadScaleRodSimulation{StructuralGraphSystem{Node6DO
 
     (u0, v0, n, u_len, v_len)
 end
-
-
 
 function DiffEqBase.ODEProblem(simulation::LoadScaleRodSimulation{StructuralGraphSystem{Node6DOF},Float64,SVector{6,Float64}}, p)
     (u0, v0, n, u_len, v_len) = get_u0(simulation)
@@ -77,10 +74,6 @@ function DiffEqBase.ODEProblem(simulation::LoadScaleRodSimulation{StructuralGrap
             dω_id = 3 * (i - 1) + 1
             ω_i = SVector{3,u_t}(ω[dω_id:dω_id+2])
 
-            #= if i == 2
-                @infiltrate
-            end =#
-
             body = bodies[i]
             rod_acceleration!(a, τ, u_v, system, body, i, s, j)
             f_acceleration!(a, τ, ext_f, i, p)
@@ -99,11 +92,8 @@ function DiffEqBase.ODEProblem(simulation::LoadScaleRodSimulation{StructuralGrap
             d_id = (u_len) + 6 * (i - 1) + 1
             @views du[d_id:d_id+2] .= a
             @views du[d_id+3:d_id+5] .= dω
-
         end
     end
 
     return ODEProblem(ode_system!, uv0, simulation.tspan, p)
 end
-
-
