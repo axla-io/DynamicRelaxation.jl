@@ -45,4 +45,7 @@ export StructuralGraphSystem, default_system
 # Simulation
 export LoadScaleRodSimulation, RodSimulation, get_u0, get_vel_ids, get_state
 
+# Plotting
+export generate_range
+
 end  # module

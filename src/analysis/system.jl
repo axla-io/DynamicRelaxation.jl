@@ -25,7 +25,9 @@ end
 
 
 
-function default_system(graph, node_type, sys_type)
+function default_system(graph, node_type, sys_type, n_pt)
+
+    n_elem = n_pt - 1
 
     if node_type == Node3DOF
         n_dof = 3 
