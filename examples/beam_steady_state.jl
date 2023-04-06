@@ -15,7 +15,7 @@ system = default_system(graph, Node6DOF, :catenary)
 ext_f = uniform_load(Pz(-10_000, system), system)
 
 # Set parameters
-maxiters = 500
+maxiters = 300
 dt = 0.01
 tspan = (0.0, 10.0)
 
@@ -29,12 +29,13 @@ c = 0.7
 (u0, v0, n, u_len, v_len) = gather_bodies_initial_coordinates(simulation)
 (dx_ids, dr_ids, v_ids, ω_ids) = get_vel_ids(u_len, v_len)
 velocitydecay!(integrator) = velocitydecay!(integrator, vcat(v_ids, ω_ids), c)
-cb = PeriodicCallback(velocitydecay!, 2 * dt; initial_affect=true)
+cb = PeriodicCallback(velocitydecay!, 3 * dt; initial_affect=true)
 
 # Create a callback to do kinetic damping
 
 # Set termination condition
-cond = KETerminationCondition(v_ids, abstol = 1e-3)
+cond = NLSolveTerminationCondition(NLSolveTerminationMode.AbsSafe; abstol = 1e-1)
+#cond = KETerminationCondition(v_ids, abstol = 1e-3)
 
 # Set algorithm for solver
 #alg = Rosenbrock23(autodiff=false)
