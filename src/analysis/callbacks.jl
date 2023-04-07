@@ -13,6 +13,6 @@ end
 
 # TODO: Make this work
 function ke_condition(u, t, integrator, tol, n::AbstractVector)
-    c = sum(abs2, (u[n] .- integrator.uprev[n]))
+    c = abs(sum(abs2, u[n]) - sum(abs2, integrator.uprev[n])) - tol
     return c
 end
