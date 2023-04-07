@@ -135,14 +135,14 @@ function f_acceleration!(a, τ, ext_f, i)
     return nothing
 end
 
-function rod_acceleration!(a, τ, x, system::StructuralGraphSystem{Node6DOF{T}}, body_i, vertex, s, j) where T
+function rod_acceleration!(a, τ, x, system::StructuralGraphSystem{Node6DOF}, body_i, vertex, s, j)
     graph = system.graph
     e_map = system.edgemap
     eps = system.elem_props
     x_vert = @view x[7*(vertex-1)+1:7*vertex]
     i_v = UInt8(vertex)
     for neighbor in neighbors(graph, i_v)
-        body_j = system.bodies[neighbor]::Node6DOF{Float64}
+        body_j = system.bodies[neighbor]::Node6DOF
         ep = eps[edge_index((i_v, neighbor), e_map)]
         rod_accelerate!(a, τ, x_vert, @view(x[7*(neighbor-1)+1:7*neighbor]), body_i, body_j, ep, s, j)
     end

@@ -1,29 +1,32 @@
 abstract type StructureSimulation end
 
-struct RodSimulation{sType<:AbstractGraphSystem,tType<:Real,fType} <: StructureSimulation
-    system::sType
-    tspan::Tuple{tType,tType}
+struct RodSimulation{T <: NBodySimulator.Body} <: StructureSimulation
+    system::StructuralGraphSystem{T}
+    tspan::Tuple{tType, tType}
     dt::tType
     ext_f::Vector{fType}
 end
 
-function get_u0(simulation::RodSimulation{StructuralGraphSystem{Node3DOF{T}},Float64,SVector{3,Float64}}) where T
+function get_u0(simulation::RodSimulation{Node3DOF})
     system = simulation.system
     bodies = system.bodies
     len = n = length(bodies)
+    u_len = 3 * len
+    v_len = 3 * len
 
-    u0 = zeros(3, len)
-    v0 = zeros(3, len)
+    u0 = zeros(u_len)
+    v0 = zeros(v_len)
 
     for i in 1:n
-        u0[:, i] = bodies[i].r
-        v0[:, i] = bodies[i].v
+        id = 6 * (i - 1) + 1
+        u0[id:(id + 2)] = bodies[i].r
+        v0[id:(id + 2)] = bodies[i].v
     end
 
-    (u0, v0, n)
+    (u0, v0, n, u_len, v_len)
 end
 
-function get_u0(simulation::RodSimulation{StructuralGraphSystem{Node6DOF{T}},Float64,SVector{6,Float64}})where T
+function get_u0(simulation::RodSimulation{Node6DOF})
     system = simulation.system
     bodies = system.bodies
     len = n = length(bodies)
@@ -36,48 +39,16 @@ function get_u0(simulation::RodSimulation{StructuralGraphSystem{Node6DOF{T}},Flo
     for i in 1:n
         bx_id = 7 * (i - 1) + 1
         bv_id = 6 * (i - 1) + 1
-        u0[bx_id:bx_id+2] = bodies[i].r
-        u0[bx_id+3:bx_id+6] = bodies[i].q
-        v0[bv_id:bv_id+2] = bodies[i].v
-        v0[bv_id+3:bv_id+5] = bodies[i].ω
+        u0[bx_id:(bx_id + 2)] = bodies[i].r
+        u0[(bx_id + 3):(bx_id + 6)] = bodies[i].q
+        v0[bv_id:(bv_id + 2)] = bodies[i].v
+        v0[(bv_id + 3):(bv_id + 5)] = bodies[i].ω
     end
 
     (u0, v0, n, u_len, v_len)
 end
 
-function DiffEqBase.ODEProblem(simulation::RodSimulation{StructuralGraphSystem{Node3DOF{T}},Float64,SVector{3,Float64}}) where T
-    (u0, v0, n) = get_u0(simulation)
-    bodies = simulation.system.bodies
-    system = simulation.system
-    ext_f = simulation.ext_f
-    dt = simulation.dt
-
-    function ode_system!(du, u, p, t)
-        du[:, 1:n] = @view u[:, (n+1):(2n)]
-        u_v = @view u[:, 1:n]
-        u_t = eltype(u)
-        a = @MVector zeros(u_t, 3)
-        s = @MVector zeros(u_t, 3)
-        _z = zero(u_t)
-        @inbounds for i in 1:n
-            @views a .*= _z
-            @views s .*= _z
-            body = bodies[i]
-            rod_acceleration!(a, u_v, system, i, s)
-            f_acceleration!(a, ext_f, i)
-            constrain_acceleration!(a, body)
-            s .*= dt^2.0 / 2.0
-            s_min!(s)
-            a = a ./ s
-
-            du[:, n+i] .= a
-        end
-    end
-
-    return ODEProblem(ode_system!, hcat(u0, v0), simulation.tspan)
-end
-
-function DiffEqBase.ODEProblem(simulation::RodSimulation{StructuralGraphSystem{Node6DOF{T}},Float64,SVector{6,Float64}}) where T
+function DiffEqBase.ODEProblem(simulation::RodSimulation{T}) where {T}
     (u0, v0, n, u_len, v_len) = get_u0(simulation)
     uv0 = vcat(u0, v0)
     (dx_ids, dr_ids, v_ids, ω_ids) = get_vel_ids(u_len, v_len)
@@ -105,47 +76,55 @@ function DiffEqBase.ODEProblem(simulation::RodSimulation{StructuralGraphSystem{N
         s = @MVector zeros(u_t, 3)
         τ = @MVector zeros(u_t, 3)
         j = @MVector zeros(u_t, 3)
+        dω = @MVector zeros(u_t, 3)
 
         @inbounds for i in 1:n
             # Reset accelerations
-            @views a .*= _z
-            @views s .*= _z
-            @views τ .*= _z
-            @views j .*= _z
-            dω_id = 3 * (i - 1) + 1
-            ω_i = SVector{3,u_t}(ω[dω_id], ω[dω_id]+1, ω[dω_id]+2)
-            set_rotation_vels!(dr, ω_i, i)
-
+            reset_accelerations!(a, s, τ, j, dω, _z, simulation)
             body = bodies[i]
-            #= if isdefined(Main, :Infiltrator)
-                Main.infiltrate(@__MODULE__, Base.@locals, @__FILE__, @__LINE__)
-              end  =#
-            rod_acceleration!(a, τ, u_v, system, body, i, s, j)
-            f_acceleration!(a, τ, ext_f, i)
-            constrain_acceleration!(a, τ, body)
 
-            # Apply momentum and masses
-            apply_jns!(a, s, dt)
-
-            # Apply moment of inertia
-            j .*= dt^2.0 / 2.0
-            s_min!(j)
-            dω = (τ -  scross(ω_i, j .* ω_i)) ./ j
+            # Accelerate system
+            accelerate_system!(a, τ, dω, u_v, system, body, ext_f, dr, ω, i, s, j, dt)
 
             # Update accelerations
-            d_id = (u_len) + 6 * (i - 1) + 1
-            @views du[d_id:d_id+2] .= a
-            @views du[d_id+3:d_id+5] .= dω
-
+            update_accelerations!(du, a, dω, u_len, i, simulation)
         end
     end
 
     return ODEProblem(ode_system!, uv0, simulation.tspan)
 end
 
+function reset_accelerations!(a, s, τ, j, dω, _z, simulation::RodSimulation{Node6DOF})
+    @views a .*= _z
+    @views s .*= _z
+    @views τ .*= _z
+    @views j .*= _z
+    @views dω .*= _z
+    return nothing
+end
+
+function reset_accelerations!(a, s, τ, j, dω, _z, simulation::RodSimulation{Node3DOF})
+    @views a .*= _z
+    @views s .*= _z
+    return nothing
+end
+
+function update_accelerations!(du, a, dω, u_len, i, simulation::RodSimulation{Node6DOF})
+    d_id = (u_len) + 6 * (i - 1) + 1
+    @views du[d_id:(d_id + 2)] .= a
+    @views du[(d_id + 3):(d_id + 5)] .= dω
+    return nothing
+end
+
+function update_accelerations!(du, a, dω, u_len, i, simulation::RodSimulation{Node3DOF})
+    d_id = (u_len) + 6 * (i - 1) + 1
+    @views du[d_id:(d_id + 2)] .= a
+    return nothing
+end
+
 function generate_range(n, t1, t2)
     step = (t2 - t1) / (n - 1)
-    return [round(Int, t1 + i * step) for i in 0:n-1]
+    return [round(Int, t1 + i * step) for i in 0:(n - 1)]
 end
 
 function apply_jns!(a, s, dt)
@@ -155,8 +134,19 @@ function apply_jns!(a, s, dt)
     return nothing
 end
 
-function get_vel_ids(u_len, v_len)
+function update_dω!(i, ω, dr, j, dω)
+    dω_id = 3 * (i - 1) + 1
+    ω_i = SVector{3, u_t}(ω[dω_id], ω[dω_id] + 1, ω[dω_id] + 2)
+    set_rotation_vels!(dr, ω_i, i)
 
+    # Apply moment of inertia
+    j .*= dt^2.0 / 2.0
+    s_min!(j)
+    @views dω .= (τ - scross(ω_i, j .* ω_i)) ./ j
+    return nothing
+end
+
+function get_vel_ids(u_len, v_len)
     dx_ids = get_ids(1, 3, 7, u_len)
     dr_ids = get_ids(4, 4, 7, u_len)
     v_ids = get_ids(u_len + 1, 3, 6, u_len + v_len)
@@ -179,7 +169,23 @@ function get_ids(start, step_inc, offset, finish)
     rangelist = Vector{Vector{Int64}}()
 
     for i in 1:step_inc
-        push!(rangelist, collect(start+i-1:offset:finish))
+        push!(rangelist, collect((start + i - 1):offset:finish))
     end
     return hcat(rangelist...)'[:]
+end
+
+function accelerate_system!(a, τ, dω, u_v, system::StructuralGraphSystem{Node6DOF}, body, ext_f, dr, ω, i, s, j, dt)
+            rod_acceleration!(a, τ, u_v, system, body, i, s, j)
+            f_acceleration!(a, τ, ext_f, i)
+            constrain_acceleration!(a, τ, body)
+            apply_jns!(a, s, dt)
+            update_dω!(i, ω, dr, j, dω)
+            return nothing
+end
+
+function accelerate_system!(a, τ, dω, u_v, system::StructuralGraphSystem{Node3DOF}, body, ext_f, dr, ω, i, s, j, dt)
+    rod_acceleration!(a, τ, u_v, system, body, i, s, j)
+    f_acceleration!(a, τ, ext_f, i)
+    constrain_acceleration!(a, τ, body)
+    return nothing
 end
