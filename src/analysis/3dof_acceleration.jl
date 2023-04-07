@@ -1,4 +1,4 @@
-function rod_acceleration!(a, x, system::StructuralGraphSystem{Node3DOF}, vertex, s)
+function rod_acceleration!(a, x, system::StructuralGraphSystem{Node3DOF{T}}, vertex, s) where T
     graph = system.graph
     e_map = system.edgemap
     eps = system.elem_props
