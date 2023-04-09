@@ -9,7 +9,7 @@ using Plots, GraphRecipes
 using Test
 
 @testset "Beam simulation" begin
-    
+
     # Define a simple graph system
     n_elem = 17
     n_pt = n_elem + 1
@@ -25,13 +25,13 @@ using Test
     tspan = (0.0, 10.0)
 
     # Create problem
-    simulation = RodSimulation(system, tspan,dt)
+    simulation = RodSimulation(system, tspan, dt)
     prob = ODEProblem(simulation, ext_f)
 
     # Create callback
     c = 0.7
     (u0, v0, n, u_len, v_len) = get_u0(simulation)
-    (dx_ids, dr_ids, v_ids, ω_ids) = get_vel_ids(u_len, v_len)
+    (dx_ids, dr_ids, v_ids, ω_ids) = get_vel_ids(u_len, v_len, system)
     v_decay!(integrator) = velocitydecay!(integrator, vcat(v_ids, ω_ids), c)
     cb1 = PeriodicCallback(v_decay!, 3 * dt; initial_affect = true)
 
@@ -42,7 +42,7 @@ using Test
     @time sol = solve(prob, alg, dt = simulation.dt, maxiters = maxiters, callback = cb1)
 
     # Plot final state
-    u_final = get_state(sol.u[end], u_len)
+    u_final = get_state(sol.u[end], u_len, simulation)
     plot(u_final[1, :], u_final[3, :])
 
     u_final_true = [0.0 0.9986722089024265 1.9977858647654367 2.997273043411182 3.997143682802792 4.997451957090221 5.998094369849439 6.998858956587347 7.999628750605406 9.000371249394592 10.00114104341265 11.001905630150565 12.00254804290978 13.002856317197205 14.00272695658882 15.002214135234565 16.001327791097573 17.0;
@@ -57,7 +57,7 @@ using Test
 
     # Loop over the time values and create a plot for each frame
     anim = @animate for i in axes(u_red, 1)
-        u_final = get_state(u_red[i], u_len)
+        u_final = get_state(u_red[i], u_len, simulation)
         plot(u_final[1, :], u_final[3, :])
     end
 

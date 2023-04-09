@@ -36,5 +36,5 @@ struct Node6DOF <: NBodySimulator.Body
 end
 
 function Node6DOF(pos, constrained, constraints)
-    Node6DOF(pos, SVector{4,Float64}(1.0, 0.0, 0.0, 0.0), CoordinateSystem{Float64}(), @SVector(zeros(Float64, 3)), @SVector(zeros(Float64, 3)), constrained, constraints)
+    Node6DOF(pos, SVector{4,Float64}(1.0, 0.0, 0.0, 0.0), CoordinateSystem(), @SVector(zeros(Float64, 3)), @SVector(zeros(Float64, 3)), constrained, constraints)
 end

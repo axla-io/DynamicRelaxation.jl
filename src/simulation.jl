@@ -6,7 +6,7 @@ struct RodSimulation{T <: NBodySimulator.Body} <: StructureSimulation
     dt::Float64
 end
 
-function RodSimulation(system::T, tspan, dt) where T
+function RodSimulation(system::T, tspan, dt) where {T}
     return RodSimulation{eltype(system.bodies)}(system::T, tspan, dt)
 end
 
@@ -60,7 +60,6 @@ function DiffEqBase.ODEProblem(simulation::RodSimulation{T}, ext_f) where {T}
     uv0 = vcat(u0, v0)
     (dx_ids, dr_ids, v_ids, ω_ids) = get_vel_ids(u_len, v_len, system)
 
-
     function ode_system!(du, u, p, t)
         # Get positions and element types
         u_v = @view u[1:u_len]
@@ -87,7 +86,7 @@ function DiffEqBase.ODEProblem(simulation::RodSimulation{T}, ext_f) where {T}
             body = bodies[i]
 
             # Accelerate system
-            accelerate_system!(a, τ, dω, u_v, system, body, ext_f, dr, ω, i, s, j, dt)
+            accelerate_system!(a, τ, dω, u_v, system, body, ext_f, dr, ω, i, s, j, dt, u_t)
 
             # Update accelerations
             update_accelerations!(du, a, dω, u_len, i, simulation)
@@ -137,7 +136,7 @@ function apply_jns!(a, s, dt)
     return nothing
 end
 
-function update_dω!(i, ω, dr, j, dω)
+function update_dω!(i, ω, τ, dr, j, dω, u_t, dt)
     dω_id = 3 * (i - 1) + 1
     ω_i = SVector{3, u_t}(ω[dω_id], ω[dω_id] + 1, ω[dω_id] + 2)
     set_rotation_vels!(dr, ω_i, i)
@@ -196,16 +195,18 @@ function get_ids(start, step_inc, offset, finish)
     return hcat(rangelist...)'[:]
 end
 
-function accelerate_system!(a, τ, dω, u_v, system::StructuralGraphSystem{Node6DOF}, body, ext_f, dr, ω, i, s, j, dt)
-            rod_acceleration!(a, τ, u_v, system, body, i, s, j)
-            f_acceleration!(a, τ, ext_f, i)
-            constrain_acceleration!(a, τ, body)
-            apply_jns!(a, s, dt)
-            update_dω!(i, ω, dr, j, dω)
-            return nothing
+function accelerate_system!(a, τ, dω, u_v, system::StructuralGraphSystem{Node6DOF}, body,
+                            ext_f, dr, ω, i, s, j, dt, u_t)
+    rod_acceleration!(a, τ, u_v, system, body, i, s, j)
+    f_acceleration!(a, τ, ext_f, i)
+    constrain_acceleration!(a, τ, body)
+    apply_jns!(a, s, dt)
+    update_dω!(i, ω, τ, dr, j, dω, u_t, dt)
+    return nothing
 end
 
-function accelerate_system!(a, τ, dω, u_v, system::StructuralGraphSystem{Node3DOF}, body, ext_f, dr, ω, i, s, j, dt)
+function accelerate_system!(a, τ, dω, u_v, system::StructuralGraphSystem{Node3DOF}, body,
+                            ext_f, dr, ω, i, s, j, dt, u_t)
     rod_acceleration!(a, u_v, system, i, s)
     f_acceleration!(a, ext_f, i)
     constrain_acceleration!(a, body)
