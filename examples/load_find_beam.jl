@@ -1,4 +1,6 @@
-using Flux, Optim, DiffEqFlux, DiffEqSensitivity
+using Optimization, SciMLSensitivity, Zygote
+
+using OptimizationOptimJL, OptimizationOptimisers
 
 using Plots, GraphRecipes
 
@@ -7,8 +9,7 @@ using DynamicRelaxation
 using Graphs
 using StaticGraphs
 using DiffEqCallbacks
-using DifferentialEquations
-using SteadyStateDiffEq
+using NBodySimulator
 
 # GENERATE DATA
 # -----------------------------------------------------
@@ -28,25 +29,24 @@ dt = 0.01
 tspan = (0.0, 10.0)
 
 # Create problem
-p_true = [1.0]
-simulation = LoadScaleRodSimulation{StructuralGraphSystem{Node6DOF},Float64,eltype(ext_f)}(system, tspan, dt, ext_f)
-prob = ODEProblem(simulation, p_true)
+simulation = RodSimulation(system, tspan, dt)
+prob = ODEProblem(simulation, ext_f)
 
-# Create decay callback
+# Create callback
 c = 0.7
-(_u0, _v0, n, u_len, v_len) = get_u0(simulation)
-(dx_ids, dr_ids, v_ids, ω_ids) = get_vel_ids(u_len, v_len)
-v_decay!(integrator) = velocitydecay!(integrator, v_ids, c)
-cb = PeriodicCallback(v_decay!, 1 * dt; initial_affect=true)
+(u0, v0, n, u_len, v_len) = get_u0(simulation)
+(dx_ids, dr_ids, v_ids, ω_ids) = get_vel_ids(u_len, v_len, system)
+v_decay!(integrator) = velocitydecay!(integrator, vcat(v_ids, ω_ids), c)
+cb = PeriodicCallback(v_decay!, 3 * dt; initial_affect = true)
 
 # Set algorithm for solver
 alg = RK4()
 
-# Solve problem, corresponding to p = 1.0
-@time sol = solve(prob, alg, dt=simulation.dt, maxiters=maxiters, callback=cb);
+# Solve problem
+@time sol = solve(prob, alg, dt = simulation.dt, maxiters = maxiters, callback = cb);
 
 # Extract final state
-u_final = get_state(sol.u[end], u_len)
+u_final = get_state(sol.u[end], u_len, simulation)
 
 # Extract initial state
 u0 = sol.u[1]
@@ -57,7 +57,8 @@ u0 = sol.u[1]
 # Create a solution (prediction) for a given starting point u0 and set of
 # parameters p
 function predict(p)
-    return get_state(concrete_solve(prob, alg, u0, p, dt=simulation.dt, maxiters=maxiters, callback=cb).u[end], u_len)
+    return get_state(solve(prob, alg, u0, p, dt = simulation.dt, maxiters = maxiters, callback = cb).u[end],
+                     u_len, simulation)
 end
 
 # Create loss function
@@ -75,15 +76,17 @@ end
 
 # Initial guess of p
 p = [0.3]
-sol_pred_init = solve(remake(prob, p=p), alg, dt=simulation.dt, maxiters=maxiters, callback=cb)
+sol_pred_init = solve(remake(prob, p = p), alg, dt = simulation.dt, maxiters = maxiters,
+                      callback = cb)
 # Plot final state
-u_pred_init = get_state(sol_pred_init.u[end], u_len)
+u_pred_init = get_state(sol_pred_init.u[end], u_len, simulation)
 
 # Callback function to observe training
 list_plots = []
 iter = 0
 
-callback = function (p, l, pred)
+
+callback = function (p, l, u_pred)
     global iter
     global list_plots
 
@@ -95,14 +98,15 @@ callback = function (p, l, pred)
     display(l)
 
     # using `remake` to re-create our `prob` with current parameters `p`
-    sol_pred = solve(remake(prob, p=p), alg, dt=simulation.dt, maxiters=maxiters, callback=cb)
+    #sol_pred = solve(remake(prob, p=p), alg, dt=simulation.dt, maxiters=maxiters, callback=cb)
     # Plot final state
-    u_pred = get_state(sol_pred.u[end], u_len)
-    plt = plot(u_final[1, :], u_final[3, :], lw = 1.5, label="Ground Truth")
-    plot!(plt, u_pred_init[1, :], u_pred_init[3, :], lw = 1.5, label="Initial Prediction")
-    plot!(plt, u_pred[1, :], u_pred[3, :], lw = 1.5, label="Prediction, iter. $iter")
+    #u_pred = get_state(sol_pred.u[end], u_len)
+    plt = plot(u_final[1, :], u_final[3, :], lw = 1.5, label = "Ground Truth")
+    plot!(plt, u_pred_init[1, :], u_pred_init[3, :], lw = 1.5, label = "Initial Prediction")
+    plot!(plt, u_pred[1, :], u_pred[3, :], lw = 1.5, label = "Prediction, iter. $iter")
     p_pred = round(p[1], digits = 4)
-    plot!(plt, ylims = (-0.3, 0.0), title = "\nLoad Finding, \$p_{\\rm{true}}\$ = 1.0, \$p_{\\rm{pred}}\$ = $p_pred")
+    plot!(plt, ylims = (-0.3, 0.0),
+          title = "\nLoad Finding, \$p_{\\rm{true}}\$ = 1.0, \$p_{\\rm{pred}}\$ = $p_pred")
 
     push!(list_plots, plt)
 
@@ -114,22 +118,32 @@ end
 # OPTIMIZE!
 # -----------------------------------------------------
 
-result_ode = DiffEqFlux.sciml_train(l2loss, p,
-    Adam(0.03), maxiters=20, cb=callback)
+adtype = Optimization.AutoZygote()
+optf1 = Optimization.OptimizationFunction((x, p) -> l2loss(x), adtype)
+optprob1 = Optimization.OptimizationProblem(optf1, p)
 
-result_ode = DiffEqFlux.sciml_train(l1loss, result_ode.minimizer,
-    BFGS(initial_stepnorm=0.0001), maxiters=10, cb=callback)
+result_ode1 = Optimization.solve(optprob1, Adam(0.03),
+                                 callback = callback,
+                                 maxiters = 20)
+#Remake and solve with BFGS
+optf2 = Optimization.OptimizationFunction((x, p) -> l1loss(x), adtype)
+optprob2 = Optimization.OptimizationProblem(optf2, p)
+
+result_ode2 = Optimization.solve(optprob2, BFGS(initial_stepnorm = 0.0001),
+                                 callback = callback,
+                                 maxiters = 10)
 
 # VISUALIZE
 # -----------------------------------------------------
-p_1 = result_ode.minimizer
+p_1 = result_ode2.minimizer
 
 # Solve problem
-@time sol_pred = solve(remake(prob, p=p_1), alg, dt=simulation.dt, maxiters=maxiters, callback=cb);
+@time sol_pred = solve(remake(prob, p = p_1), alg, dt = simulation.dt, maxiters = maxiters,
+                       callback = cb);
 
 # Plot final state
 u_pred = get_state(sol_pred.u[end], u_len)
-plot(u_final[1, :], u_final[3, :], label="Ground Truth")
-plot!(u_pred[1, :], u_pred[3, :], label="Prediction")
+plot(u_final[1, :], u_final[3, :], label = "Ground Truth")
+plot!(u_pred[1, :], u_pred[3, :], label = "Prediction")
 
-animate(list_plots, "load_finding.gif",fps=2)
+animate(list_plots, "load_finding.gif", fps = 2)

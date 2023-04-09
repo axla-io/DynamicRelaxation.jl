@@ -2,7 +2,7 @@
 
 julia_version = "1.8.1"
 manifest_format = "2.0"
-project_hash = "6de9ebe4aa0bed25adbdbc8ef285e1ac0eeb1e94"
+project_hash = "5e06e2ed4005bd7519a5e6d3d29a4e31a898e93d"
 
 [[deps.AbstractAlgebra]]
 deps = ["GroupsCore", "InteractiveUtils", "LinearAlgebra", "MacroTools", "Markdown", "Random", "RandomExtensions", "SparseArrays", "Test"]
@@ -1407,9 +1407,9 @@ version = "0.2.17"
 
 [[deps.Optimization]]
 deps = ["ArrayInterface", "ConsoleProgressMonitor", "DocStringExtensions", "Logging", "LoggingExtras", "Pkg", "Printf", "ProgressLogging", "Reexport", "Requires", "SciMLBase", "SparseArrays", "TerminalLoggers"]
-git-tree-sha1 = "f35d3ea702c4fc283f1a36038d6d86deffc38467"
+git-tree-sha1 = "012e44804e52b157e3180b52c504636b52af5ea4"
 uuid = "7f7a1694-90dd-40f0-9382-eb1efda571ba"
-version = "3.13.0"
+version = "3.13.1"
 
 [[deps.OptimizationFlux]]
 deps = ["Flux", "Optimization", "Printf", "ProgressLogging", "Reexport"]
@@ -1419,9 +1419,9 @@ version = "0.1.2"
 
 [[deps.OptimizationOptimJL]]
 deps = ["Optim", "Optimization", "Reexport", "SparseArrays"]
-git-tree-sha1 = "8de765af24432390000bc39e1efae51cf4dbdc5c"
+git-tree-sha1 = "a6e75f984a95c3295940b664796ba6157d9e7f04"
 uuid = "36348300-93cb-4f02-beb5-3c3902f8871e"
-version = "0.1.5"
+version = "0.1.6"
 
 [[deps.OptimizationOptimisers]]
 deps = ["Optimisers", "Optimization", "Printf", "ProgressLogging", "Reexport"]
@@ -2274,9 +2274,9 @@ version = "1.5.4+0"
 
 [[deps.Zygote]]
 deps = ["AbstractFFTs", "ChainRules", "ChainRulesCore", "DiffRules", "Distributed", "FillArrays", "ForwardDiff", "GPUArrays", "GPUArraysCore", "IRTools", "InteractiveUtils", "LinearAlgebra", "LogExpFunctions", "MacroTools", "NaNMath", "Random", "Requires", "SnoopPrecompile", "SparseArrays", "SpecialFunctions", "Statistics", "ZygoteRules"]
-git-tree-sha1 = "4df8f470806a45a8630ac8f597304821dc8e8838"
+git-tree-sha1 = "987ae5554ca90e837594a0f30325eeb5e7303d1e"
 uuid = "e88e6eb3-aa80-5325-afca-941959d7151f"
-version = "0.6.59"
+version = "0.6.60"
 
 [[deps.ZygoteRules]]
 deps = ["ChainRulesCore", "MacroTools"]
