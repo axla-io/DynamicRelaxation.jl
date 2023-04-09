@@ -209,5 +209,6 @@ function accelerate_system!(a, τ, dω, u_v, system::StructuralGraphSystem{Node3
     rod_acceleration!(a, u_v, system, i, s)
     f_acceleration!(a, ext_f, i)
     constrain_acceleration!(a, body)
+    apply_jns!(a, s, dt)
     return nothing
 end
