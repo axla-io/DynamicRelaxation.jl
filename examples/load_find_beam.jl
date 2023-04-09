@@ -57,20 +57,21 @@ u0 = sol.u[1]
 # Create a solution (prediction) for a given starting point u0 and set of
 # parameters p
 function predict(p)
-    return get_state(solve(prob, alg, u0, p, dt = simulation.dt, maxiters = maxiters, callback = cb).u[end],
-                     u_len, simulation)
+    return solve(prob, alg, p = p)
 end
 
 # Create loss function
 function l2loss(p)
     prediction = predict(p)
-    loss = sum(abs, prediction .- u_final)
+    u_pred = get_state(prediction.u[end], u_len, simulation)
+    loss = sum(abs2, u_pred .- u_final)
     return loss, prediction
 end
 
 function l1loss(p)
     prediction = predict(p)
-    loss = sum(abs, prediction .- u_final)
+    u_pred = get_state(prediction.u[end], u_len, simulation)
+    loss = sum(abs, u_pred .- u_final)
     return loss, prediction
 end
 
@@ -86,7 +87,7 @@ list_plots = []
 iter = 0
 
 
-callback = function (p, l, u_pred)
+callback = function (p, l, prediction)
     global iter
     global list_plots
 
@@ -96,6 +97,7 @@ callback = function (p, l, u_pred)
     iter += 1
 
     display(l)
+    u_pred = get_state(prediction.u[end], u_len, simulation)
 
     # using `remake` to re-create our `prob` with current parameters `p`
     #sol_pred = solve(remake(prob, p=p), alg, dt=simulation.dt, maxiters=maxiters, callback=cb)

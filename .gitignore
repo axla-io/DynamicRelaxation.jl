@@ -8,3 +8,6 @@ DynamicRelaxation.jl.code-workspace
 load_finding.mp4
 src/steady_state/experimental/
 Manifest.toml
+LV_ode.png
+
+examples/test.jl
