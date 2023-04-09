@@ -1,6 +1,6 @@
 name = "DynamicRelaxation"
 uuid = "01280ee2-506b-4fc2-bbeb-79eecb245451"
-version = "0.0.1"
+version = "0.1.0"
 author = ["Axel Larsson"]
 
 [deps]
