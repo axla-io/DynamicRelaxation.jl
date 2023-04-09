@@ -25,12 +25,8 @@ using Test
     tspan = (0.0, 10.0)
 
     # Create problem
-    simulation = RodSimulation{StructuralGraphSystem{Node6DOF{Float64}}, Float64,
-                               eltype(ext_f)}(system,
-                                              tspan,
-                                              dt,
-                                              ext_f)
-    prob = ODEProblem(simulation)
+    simulation = RodSimulation(system, tspan,dt)
+    prob = ODEProblem(simulation, ext_f)
 
     # Create callback
     c = 0.7

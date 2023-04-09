@@ -2,9 +2,12 @@ abstract type StructureSimulation end
 
 struct RodSimulation{T <: NBodySimulator.Body} <: StructureSimulation
     system::StructuralGraphSystem{T}
-    tspan::Tuple{tType, tType}
-    dt::tType
-    ext_f::Vector{fType}
+    tspan::Tuple{Float64, Float64}
+    dt::Float64
+end
+
+function RodSimulation(system::T, tspan, dt) where T
+    return RodSimulation{eltype(system.bodies)}(system::T, tspan, dt)
 end
 
 function get_u0(simulation::RodSimulation{Node3DOF})
@@ -18,7 +21,7 @@ function get_u0(simulation::RodSimulation{Node3DOF})
     v0 = zeros(v_len)
 
     for i in 1:n
-        id = 6 * (i - 1) + 1
+        id = 3 * (i - 1) + 1
         u0[id:(id + 2)] = bodies[i].r
         v0[id:(id + 2)] = bodies[i].v
     end
@@ -48,15 +51,15 @@ function get_u0(simulation::RodSimulation{Node6DOF})
     (u0, v0, n, u_len, v_len)
 end
 
-function DiffEqBase.ODEProblem(simulation::RodSimulation{T}) where {T}
-    (u0, v0, n, u_len, v_len) = get_u0(simulation)
-    uv0 = vcat(u0, v0)
-    (dx_ids, dr_ids, v_ids, ω_ids) = get_vel_ids(u_len, v_len)
-
+function DiffEqBase.ODEProblem(simulation::RodSimulation{T}, ext_f) where {T}
     bodies = simulation.system.bodies
     system = simulation.system
-    ext_f = simulation.ext_f
     dt = simulation.dt
+
+    (u0, v0, n, u_len, v_len) = get_u0(simulation)
+    uv0 = vcat(u0, v0)
+    (dx_ids, dr_ids, v_ids, ω_ids) = get_vel_ids(u_len, v_len, system)
+
 
     function ode_system!(du, u, p, t)
         # Get positions and element types
@@ -117,7 +120,7 @@ function update_accelerations!(du, a, dω, u_len, i, simulation::RodSimulation{N
 end
 
 function update_accelerations!(du, a, dω, u_len, i, simulation::RodSimulation{Node3DOF})
-    d_id = (u_len) + 6 * (i - 1) + 1
+    d_id = (u_len) + 3 * (i - 1) + 1
     @views du[d_id:(d_id + 2)] .= a
     return nothing
 end
@@ -146,7 +149,16 @@ function update_dω!(i, ω, dr, j, dω)
     return nothing
 end
 
-function get_vel_ids(u_len, v_len)
+function get_vel_ids(u_len, v_len, system::StructuralGraphSystem{Node3DOF})
+    dx_ids = get_ids(1, 3, 3, u_len)
+    _dr_ids = dx_ids # Dummy variable
+    v_ids = get_ids(u_len + 1, 3, 3, u_len + v_len)
+    _ω_ids = v_ids # Dummy variable
+
+    return dx_ids, _dr_ids, v_ids, _ω_ids
+end
+
+function get_vel_ids(u_len, v_len, system::StructuralGraphSystem{Node6DOF})
     dx_ids = get_ids(1, 3, 7, u_len)
     dr_ids = get_ids(4, 4, 7, u_len)
     v_ids = get_ids(u_len + 1, 3, 6, u_len + v_len)
@@ -155,7 +167,17 @@ function get_vel_ids(u_len, v_len)
     return dx_ids, dr_ids, v_ids, ω_ids
 end
 
-function get_state(u, u_len)
+function get_state(u, u_len, simulation::RodSimulation{Node3DOF})
+    x_ids = 1:3:u_len
+    y_ids = 2:3:u_len
+    z_ids = 3:3:u_len
+
+    state = hcat(u[x_ids], u[y_ids], u[z_ids])'
+
+    return state
+end
+
+function get_state(u, u_len, simulation::RodSimulation{Node6DOF})
     x_ids = 1:7:u_len
     y_ids = 2:7:u_len
     z_ids = 3:7:u_len
@@ -184,8 +206,8 @@ function accelerate_system!(a, τ, dω, u_v, system::StructuralGraphSystem{Node6
 end
 
 function accelerate_system!(a, τ, dω, u_v, system::StructuralGraphSystem{Node3DOF}, body, ext_f, dr, ω, i, s, j, dt)
-    rod_acceleration!(a, τ, u_v, system, body, i, s, j)
-    f_acceleration!(a, τ, ext_f, i)
-    constrain_acceleration!(a, τ, body)
+    rod_acceleration!(a, u_v, system, i, s)
+    f_acceleration!(a, ext_f, i)
+    constrain_acceleration!(a, body)
     return nothing
 end
