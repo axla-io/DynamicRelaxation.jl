@@ -7,7 +7,7 @@ struct StructuralGraphSystem{bType<:NBodySimulator.Body} <: AbstractGraphSystem
     graph::StaticGraph{UInt8,UInt8} #TODO: best way to define graph types?
 
     # custom
-    elem_props::Vector{ElementProperties{Float64}} # Also check how to properly set element properties
+    elem_props::Vector{ElementProperties} # Also check how to properly set element properties
     edgemap::Dict{Tuple{UInt8,UInt8},Int}
 end
 
@@ -42,23 +42,23 @@ function default_system(graph, node_type, sys_type, n_pt)
     It = 2 * Iy                 # [m^4]
     l_init = 1.0
 
-    ep = ElementProperties{Float64}(E, A, Iy, Iz, G, It, l_init)
+    ep = ElementProperties(E, A, Iy, Iz, G, It, l_init)
 
     if sys_type == :catenary # Is equivalent to simply supported beam for beam structure
         #@infiltrate
-        np_fix = node_type{Float64}(@SVector(zeros(3)), true, pinned(n_dof))
-        np_free = [node_type{Float64}(SVector{3,Float64}([i - 1, 0.0, 0.0]), false, free(n_dof)) for i in 2:n_pt-1]
-        nodes = vcat(np_fix, np_free..., node_type{Float64}(SVector{3,Float64}([n_elem, 0.0, 0.0]), true, pinned(n_dof))) # Assuming same order as in graph
+        np_fix = node_type(@SVector(zeros(3)), true, pinned(n_dof))
+        np_free = [node_type(SVector{3,Float64}([i - 1, 0.0, 0.0]), false, free(n_dof)) for i in 2:n_pt-1]
+        nodes = vcat(np_fix, np_free..., node_type(SVector{3,Float64}([n_elem, 0.0, 0.0]), true, pinned(n_dof))) # Assuming same order as in graph
 
     elseif sys_type == :cantilever
-        np_fix = node_type{Float64}(@SVector(zeros(3)), true, clamped(n_dof))
-        np_free = [node_type{Float64}(SVector{3,Float64}([i - 1, 0.0, 0.0]), false, free(n_dof)) for i in 2:n_pt]
+        np_fix = node_type(@SVector(zeros(3)), true, clamped(n_dof))
+        np_free = [node_type(SVector{3,Float64}([i - 1, 0.0, 0.0]), false, free(n_dof)) for i in 2:n_pt]
         nodes = vcat(np_fix, np_free...) # Assuming same order as in graph
 
     elseif sys_type == :elastica
-        np_fix = node_type{Float64}(@SVector(zeros(3)), true, pinned(n_dof))
-        np_free = [node_type{Float64}(SVector{3,Float64}([i - 1, 0.0, 0.0]), false, free(n_dof)) for i in 2:n_pt-1]
-        np_roller = node_type{Float64}(SVector{3,Float64}([n_elem, 0.0, 0.0]), true, roller(n_dof, :x))
+        np_fix = node_type(@SVector(zeros(3)), true, pinned(n_dof))
+        np_free = [node_type(SVector{3,Float64}([i - 1, 0.0, 0.0]), false, free(n_dof)) for i in 2:n_pt-1]
+        np_roller = node_type(SVector{3,Float64}([n_elem, 0.0, 0.0]), true, roller(n_dof, :x))
         nodes = vcat(np_fix, np_free..., np_roller) # Assuming same order as in graph
 
     else
@@ -70,6 +70,6 @@ function default_system(graph, node_type, sys_type, n_pt)
 
     edgemap = Dict{Tuple{UInt8,UInt8},Int}((src(e), dst(e)) => i for (i, e) in enumerate(edgelist))
 
-    StructuralGraphSystem{node_type{Float64}}(nodes, graph, eps, edgemap)
+    StructuralGraphSystem{node_type}(nodes, graph, eps, edgemap)
 
 end

@@ -1,13 +1,15 @@
-function rod_acceleration!(a, x, system::StructuralGraphSystem{Node3DOF{T}}, vertex, s) where T
+function rod_acceleration!(a, x, system::StructuralGraphSystem{Node3DOF}, vertex, s)
     graph = system.graph
     e_map = system.edgemap
     eps = system.elem_props
-    x_vert = @view x[:, vertex]
+    v_i = 3*(vertex - 1) + 1
+    x_vert = @view x[v_i:v_i+2]
     i_v = UInt8(vertex)
 
     for neighbor in neighbors(graph, i_v)
+        n_i = 3*(neighbor - 1) + 1
         ep = eps[edge_index((i_v, neighbor), e_map)]
-        rod_accelerate!(a, x_vert, @view(x[:, neighbor]), ep, s)
+        rod_accelerate!(a, x_vert, @view(x[n_i:n_i+2]), ep, s)
     end
     return nothing
 end

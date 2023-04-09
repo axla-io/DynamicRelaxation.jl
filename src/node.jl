@@ -1,40 +1,40 @@
 # Struct for storing nodal properties
-struct Node3DOF{T} <: NBodySimulator.Body
+struct Node3DOF <: NBodySimulator.Body
     # Initial conditions
-    r::SVector{3,T}
-    v::SVector{3,T}
+    r::SVector{3,Float64}
+    v::SVector{3,Float64}
 
     # For constraints
     constrained::Bool
     constraints::SVector{3,Bool}
 end
 
-function Node3DOF{T}(pos, constrained, constraints) where {T<:Real}
-    Node3DOF{T}(pos, @SVector(zeros(T, 3)), constrained, constraints)
+function Node3DOF(pos, constrained, constraints)
+    Node3DOF(pos, @SVector(zeros(Float64, 3)), constrained, constraints)
 end
-struct CoordinateSystem{T}
-    x::SVector{3,T}
-    y::SVector{3,T}
-    z::SVector{3,T}
-end
-
-function CoordinateSystem{T}()where T <:Real
-    CoordinateSystem{T}(SVector{3,T}(1, 0, 0), SVector{3,T}(0, 1, 0), SVector{3,T}(0, 0, 1))
+struct CoordinateSystem
+    x::SVector{3,Float64}
+    y::SVector{3,Float64}
+    z::SVector{3,Float64}
 end
 
-struct Node6DOF{T} <: NBodySimulator.Body
+function CoordinateSystem()
+    CoordinateSystem(SVector{3,Float64}(1, 0, 0), SVector{3,Float64}(0, 1, 0), SVector{3,Float64}(0, 0, 1))
+end
+
+struct Node6DOF <: NBodySimulator.Body
     # Initial conditions
-    r::SVector{3,T}
-    q::SVector{4,T}
-    cs::CoordinateSystem{T}
-    v::SVector{3,T}
-    ω::SVector{3,T}
+    r::SVector{3,Float64}
+    q::SVector{4,Float64}
+    cs::CoordinateSystem
+    v::SVector{3,Float64}
+    ω::SVector{3,Float64}
 
     # For constraints
     constrained::Bool
     constraints::SVector{7,Bool}
 end
 
-function Node6DOF{T}(pos, constrained, constraints) where {T<:Real}
-    Node6DOF{T}(pos, SVector{4,T}(1.0, 0.0, 0.0, 0.0), CoordinateSystem{T}(), @SVector(zeros(T, 3)), @SVector(zeros(T, 3)), constrained, constraints)
+function Node6DOF(pos, constrained, constraints)
+    Node6DOF(pos, SVector{4,Float64}(1.0, 0.0, 0.0, 0.0), CoordinateSystem(), @SVector(zeros(Float64, 3)), @SVector(zeros(Float64, 3)), constrained, constraints)
 end

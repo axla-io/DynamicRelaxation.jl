@@ -1,14 +1,14 @@
-Px(c, system::StructuralGraphSystem{Node6DOF{Float64}}) = c * [1.0, 0.0, 0.0, 0.0, 0.0, 0.0]
-Py(c, system::StructuralGraphSystem{Node6DOF{Float64}}) = c * [0.0, 1.0, 0.0, 0.0, 0.0, 0.0]
-Pz(c, system::StructuralGraphSystem{Node6DOF{Float64}}) = c * [0.0, 0.0, 1.0, 0.0, 0.0, 0.0]
+Px(c, system::StructuralGraphSystem{Node6DOF}) = c * [1.0, 0.0, 0.0, 0.0, 0.0, 0.0]
+Py(c, system::StructuralGraphSystem{Node6DOF}) = c * [0.0, 1.0, 0.0, 0.0, 0.0, 0.0]
+Pz(c, system::StructuralGraphSystem{Node6DOF}) = c * [0.0, 0.0, 1.0, 0.0, 0.0, 0.0]
 
-Px(c, system::StructuralGraphSystem{Node3DOF{Float64}}) = c * [1.0, 0.0, 0.0]
-Py(c, system::StructuralGraphSystem{Node3DOF{Float64}}) = c * [0.0, 1.0, 0.0]
-Pz(c, system::StructuralGraphSystem{Node3DOF{Float64}}) = c * [0.0, 0.0, 1.0]
+Px(c, system::StructuralGraphSystem{Node3DOF}) = c * [1.0, 0.0, 0.0]
+Py(c, system::StructuralGraphSystem{Node3DOF}) = c * [0.0, 1.0, 0.0]
+Pz(c, system::StructuralGraphSystem{Node3DOF}) = c * [0.0, 0.0, 1.0]
 
-Mx(c, system::StructuralGraphSystem{Node6DOF{Float64}}) = c * [ 0.0, 0.0, 0.0, 1.0, 0.0, 0.0]
-My(c, system::StructuralGraphSystem{Node6DOF{Float64}}) = c * [ 0.0, 0.0, 0.0, 0.0, 1.0, 0.0]
-Mz(c, system::StructuralGraphSystem{Node6DOF{Float64}}) = c * [ 0.0, 0.0, 0.0, 0.0, 0.0, 1.0]
+Mx(c, system::StructuralGraphSystem{Node6DOF}) = c * [ 0.0, 0.0, 0.0, 1.0, 0.0, 0.0]
+My(c, system::StructuralGraphSystem{Node6DOF}) = c * [ 0.0, 0.0, 0.0, 0.0, 1.0, 0.0]
+Mz(c, system::StructuralGraphSystem{Node6DOF}) = c * [ 0.0, 0.0, 0.0, 0.0, 0.0, 1.0]
 
 function uniform_load(v::Vector{T}, system) where {T<:Real}
     N = length(v)

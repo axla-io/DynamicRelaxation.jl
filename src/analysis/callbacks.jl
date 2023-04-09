@@ -1,6 +1,6 @@
 
 function velocitydecay!(integrator, n, c)
-    @views integrator.u[:, (n + 1):(2n)] .*= c
+    @views integrator.u[(3n + 1):(6n)] .*= c
 end
 
 function velocitydecay!(integrator, n::AbstractVector, c)
