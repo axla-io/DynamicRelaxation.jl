@@ -32,12 +32,12 @@ tspan = (0.0, 10.0)
 simulation = LoadScaleRodSimulation(system, tspan, dt)
 prob = ODEProblem(simulation, ext_f)
 
-# Create callback
+# Create decay callback
 c = 0.7
-(u0, v0, n, u_len, v_len) = get_u0(simulation)
+(_u0, _v0, n, u_len, v_len) = get_u0(simulation)
 (dx_ids, dr_ids, v_ids, ω_ids) = get_vel_ids(u_len, v_len, system)
-v_decay!(integrator) = velocitydecay!(integrator, vcat(v_ids, ω_ids), c)
-cb1 = PeriodicCallback(v_decay!, 3 * dt; initial_affect = true)
+v_decay!(integrator) = velocitydecay!(integrator, v_ids, c)
+cb = PeriodicCallback(v_decay!, 1 * dt; initial_affect=true)
 
 # Set algorithm for solver
 alg = RK4()
