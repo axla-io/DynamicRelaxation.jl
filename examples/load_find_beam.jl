@@ -29,7 +29,7 @@ dt = 0.01
 tspan = (0.0, 10.0)
 
 # Create problem
-simulation = RodSimulation(system, tspan, dt)
+simulation = LoadScaleRodSimulation(system, tspan, dt)
 prob = ODEProblem(simulation, ext_f)
 
 # Create callback
@@ -42,8 +42,11 @@ cb = PeriodicCallback(v_decay!, 3 * dt; initial_affect = true)
 # Set algorithm for solver
 alg = RK4()
 
+# Ground truth parameter
+p_gt = [1.0]
+
 # Solve problem
-@time sol = solve(prob, alg, dt = simulation.dt, maxiters = maxiters, callback = cb);
+@time sol = solve(prob, alg, p=p_gt, dt = simulation.dt, maxiters = maxiters, callback = cb);
 
 # Extract final state
 u_final = get_state(sol.u[end], u_len, simulation)
@@ -57,27 +60,27 @@ u0 = sol.u[1]
 # Create a solution (prediction) for a given starting point u0 and set of
 # parameters p
 function predict(p)
-    return solve(prob, alg, p = p)
+    return solve(prob, alg, p = p, dt = simulation.dt, maxiters = maxiters, callback = cb)
 end
 
 # Create loss function
 function l2loss(p)
-    prediction = predict(p)
+    prediction = solve(prob, alg, p = p, dt = simulation.dt, maxiters = maxiters, callback = cb, sensealg = InterpolatingAdjoint(autojacvec=ZygoteVJP()))
     u_pred = get_state(prediction.u[end], u_len, simulation)
     loss = sum(abs2, u_pred .- u_final)
     return loss, prediction
 end
 
 function l1loss(p)
-    prediction = predict(p)
+    prediction = solve(prob, alg, p = p, dt = simulation.dt, maxiters = maxiters, callback = cb)
     u_pred = get_state(prediction.u[end], u_len, simulation)
     loss = sum(abs, u_pred .- u_final)
     return loss, prediction
 end
 
 # Initial guess of p
-p = [0.3]
-sol_pred_init = solve(remake(prob, p = p), alg, dt = simulation.dt, maxiters = maxiters,
+p0 = [0.3]
+sol_pred_init = solve(prob, alg, p = p0, dt = simulation.dt, maxiters = maxiters,
                       callback = cb)
 # Plot final state
 u_pred_init = get_state(sol_pred_init.u[end], u_len, simulation)
@@ -122,14 +125,18 @@ end
 
 adtype = Optimization.AutoZygote()
 optf1 = Optimization.OptimizationFunction((x, p) -> l2loss(x), adtype)
-optprob1 = Optimization.OptimizationProblem(optf1, p)
+optprob1 = Optimization.OptimizationProblem(optf1, p0)
 
 result_ode1 = Optimization.solve(optprob1, Adam(0.03),
-                                 callback = callback,
+                                 #callback = callback,
+                                 maxiters = 20)
+
+                               @report_call  Optimization.solve(optprob1, Adam(0.03),
+                                 #callback = callback,
                                  maxiters = 20)
 #Remake and solve with BFGS
 optf2 = Optimization.OptimizationFunction((x, p) -> l1loss(x), adtype)
-optprob2 = Optimization.OptimizationProblem(optf2, p)
+optprob2 = Optimization.OptimizationProblem(optf2, result_ode1.minimizer)
 
 result_ode2 = Optimization.solve(optprob2, BFGS(initial_stepnorm = 0.0001),
                                  callback = callback,
