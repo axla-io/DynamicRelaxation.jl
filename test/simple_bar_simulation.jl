@@ -38,7 +38,7 @@ using Test
     prob = ODEProblem(simulation, ext_f)
 
     # Solve problem
-    @time sol = solve(prob, alg, dt = simulation.dt, maxiters = maxiters, callback = cb)
+    @time sol = solve(prob, alg, dt = simulation.dt, maxiters = maxiters, callback = cb, verbose = false)
 
     # Plot final state
     u_final = get_state(sol.u[end], u_len, simulation)

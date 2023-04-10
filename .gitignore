@@ -1,10 +1,14 @@
 .vscode/settings.json
-animation.gif
 examples/mwe.jl
 examples/jacobian_test.jl
 examples/reset_infiltrate.jl
-load_finding.gif
 DynamicRelaxation.jl.code-workspace
-load_finding.mp4
 src/steady_state/experimental/
 Manifest.toml
+LV_ode.png
+
+examples/test.jl
+examples/load_find_beam.jl
+
+*.gif
+*.mp4
