@@ -85,7 +85,7 @@ end
 # Initial guess of p
 p0 = [0.3]
 sol_pred_init = solve(prob, alg, p = p0, dt = simulation.dt, maxiters = maxiters,
-                      callback = cb1)
+                      callback = cb1);
 # Plot final state
 u_pred_init = get_state(sol_pred_init.u[end], u_len, simulation)
 
