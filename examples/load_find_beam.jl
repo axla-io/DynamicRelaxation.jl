@@ -28,14 +28,13 @@ dt = 0.01
 tspan = (0.0, 10.0)
 
 # Create problem
-p_true = [1.0]
-simulation = LoadScaleRodSimulation{StructuralGraphSystem{Node6DOF},Float64,eltype(ext_f)}(system, tspan, dt, ext_f)
-prob = ODEProblem(simulation, p_true)
+simulation = LoadScaleRodSimulation(system, tspan, dt)
+prob = ODEProblem(simulation, ext_f)
 
 # Create decay callback
 c = 0.7
 (_u0, _v0, n, u_len, v_len) = get_u0(simulation)
-(dx_ids, dr_ids, v_ids, ω_ids) = get_vel_ids(u_len, v_len)
+(dx_ids, dr_ids, v_ids, ω_ids) = get_vel_ids(u_len, v_len, system)
 v_decay!(integrator) = velocitydecay!(integrator, v_ids, c)
 cb = PeriodicCallback(v_decay!, 1 * dt; initial_affect=true)
 
@@ -43,10 +42,11 @@ cb = PeriodicCallback(v_decay!, 1 * dt; initial_affect=true)
 alg = RK4()
 
 # Solve problem, corresponding to p = 1.0
-@time sol = solve(prob, alg, dt=simulation.dt, maxiters=maxiters, callback=cb);
+p_true = [1.0]
+@time sol = solve(prob, alg, p = p_true, dt=simulation.dt, maxiters=maxiters, callback=cb);
 
 # Extract final state
-u_final = get_state(sol.u[end], u_len)
+u_final = get_state(sol.u[end], u_len, simulation)
 
 # Extract initial state
 u0 = sol.u[1]
@@ -57,7 +57,7 @@ u0 = sol.u[1]
 # Create a solution (prediction) for a given starting point u0 and set of
 # parameters p
 function predict(p)
-    return get_state(concrete_solve(prob, alg, u0, p, dt=simulation.dt, maxiters=maxiters, callback=cb).u[end], u_len)
+    return get_state(concrete_solve(prob, alg, u0, p, dt=simulation.dt, maxiters=maxiters, callback=cb).u[end], u_len, simulation)
 end
 
 # Create loss function
@@ -77,7 +77,7 @@ end
 p = [0.3]
 sol_pred_init = solve(remake(prob, p=p), alg, dt=simulation.dt, maxiters=maxiters, callback=cb)
 # Plot final state
-u_pred_init = get_state(sol_pred_init.u[end], u_len)
+u_pred_init = get_state(sol_pred_init.u[end], u_len, simulation)
 
 # Callback function to observe training
 list_plots = []
