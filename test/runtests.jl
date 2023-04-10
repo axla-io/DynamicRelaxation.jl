@@ -11,3 +11,4 @@ using Test
 include("simple_graph.jl")
 include("simple_bar_simulation.jl")
 include("simple_beam_simulation.jl")
+include("load_find_beam.jl")
