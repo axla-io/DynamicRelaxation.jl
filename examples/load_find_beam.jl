@@ -10,6 +10,7 @@ using Graphs
 using StaticGraphs
 using DiffEqCallbacks
 using NBodySimulator
+using DiffEqFlux
 
 # GENERATE DATA
 # -----------------------------------------------------
@@ -38,16 +39,14 @@ c = 0.7
 (dx_ids, dr_ids, v_ids, ω_ids) = get_vel_ids(u_len, v_len, system)
 v_decay!(integrator) = velocitydecay!(integrator, v_ids, c)
 
-
-cb1 = PeriodicCallback(v_decay!, 1 * dt; initial_affect=true)
+cb1 = PeriodicCallback(v_decay!, 1 * dt; initial_affect = true)
 
 # Set algorithm for solver
 alg = RK4()
 
 # Solve problem, corresponding to p = 1.0
 p_true = [1.0]
-@time sol = solve(remake(prob, p = p_true), alg, dt=simulation.dt, maxiters=maxiters, callback=cb1);
-@report_opt solve(remake(prob, p = p_true), alg, dt=simulation.dt, maxiters=maxiters, callback=cb1)
+@time sol = solve(prob, p = p_true, alg, dt = simulation.dt, maxiters = maxiters);#, callback=cb1);
 # Extract final state
 u_final = get_state(sol.u[end], u_len, simulation)
 
@@ -63,20 +62,16 @@ u0 = sol.u[1]
     return solve(prob, alg, p = p, dt = simulation.dt, maxiters = maxiters, callback = cb)
 end =#
 
-function predict(p)
-    return get_state(concrete_solve(prob, alg, u0, p, dt=simulation.dt, maxiters=maxiters, callback=cb).u[end], u_len, simulation)
-end
-
 # Create loss function
 function l2loss(p)
-    prediction = solve(remake(prob, p = p, u0 = u0), alg, dt = simulation.dt, maxiters = maxiters, callback = cb1)
+    prediction = solve(prob, alg, p = p, dt = simulation.dt, maxiters = maxiters)#, callback = cb1)
     u_pred = get_state(prediction.u[end], u_len, simulation)
     loss = sum(abs2, u_pred .- u_final)
     return loss, prediction
 end
 
 function l1loss(p)
-    prediction = solve(prob, alg, p = p, dt = simulation.dt, maxiters = maxiters, callback = cb1)
+    prediction = solve(prob, alg, p = p, dt = simulation.dt, maxiters = maxiters)#, callback = cb1)
     u_pred = get_state(prediction.u[end], u_len, simulation)
     loss = sum(abs, u_pred .- u_final)
     return loss, prediction
@@ -84,15 +79,16 @@ end
 
 # Initial guess of p
 p0 = [0.3]
-sol_pred_init = solve(prob, alg, p = p0, dt = simulation.dt, maxiters = maxiters,
-                      callback = cb1);
+sol_pred_init = solve(prob, alg, p = p0, dt = simulation.dt, maxiters = maxiters)#,
+#callback = cb1);
+
+l2loss(p0)
 # Plot final state
 u_pred_init = get_state(sol_pred_init.u[end], u_len, simulation)
 
 # Callback function to observe training
 list_plots = []
 iter = 0
-
 
 callback = function (p, l, prediction)
     global iter
@@ -127,8 +123,30 @@ end
 # OPTIMIZE!
 # -----------------------------------------------------
 
-result_ode1 = DiffEqFlux.sciml_train(l2loss, p0,
-    Adam(0.03), maxiters=20)
+function axl_train(loss, θ, opt = OptimizationPolyalgorithms.PolyOpt(), adtype = nothing,
+                   args...;
+                   lower_bounds = nothing, upper_bounds = nothing, cb = nothing,
+                   callback = (args...) -> (false),
+                   maxiters = nothing, kwargs...)
+    adtype = Optimization.AutoFiniteDiff()
+    #adtype = Optimization.AutoZygote()
+
+    if !isnothing(cb)
+        callback = cb
+    end
+
+    optf = Optimization.OptimizationFunction((x, p) -> loss(x), adtype)
+    optprob = Optimization.OptimizationProblem(optf, θ; lb = lower_bounds,
+                                               ub = upper_bounds, kwargs...)
+
+    Optimization.solve(optprob, opt, args...; maxiters, callback = callback, kwargs...)
+end
+
+result_ode1 = axl_train(l2loss, p0,
+OptimizationOptimisers.Adam(0.03), maxiters=20)
+
+#= result_ode1 = DiffEqFlux.sciml_train(l2loss, p0,
+OptimizationOptimisers.Adam(0.03), maxiters=20) =#
 #= 
 adtype = Optimization.AutoZygote()
 optf1 = Optimization.OptimizationFunction((x, p) -> l2loss(x), adtype)
@@ -144,8 +162,6 @@ result_ode1 = Optimization.solve(optprob1, Adam(0.03),
 #= #Remake and solve with BFGS
 optf2 = Optimization.OptimizationFunction((x, p) -> l1loss(x), adtype)
 optprob2 = Optimization.OptimizationProblem(optf2, result_ode1.minimizer)
-
-
 
 result_ode2 = Optimization.solve(optprob2, BFGS(initial_stepnorm = 0.0001),
                                  callback = callback,
