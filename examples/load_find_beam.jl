@@ -31,25 +31,25 @@ tspan = (0.0, 10.0)
 # Create problem
 simulation = LoadScaleRodSimulation(system, tspan, dt)
 prob = ODEProblem(simulation, ext_f)
+simulation = LoadScaleRodSimulation(system, tspan, dt)
+prob = ODEProblem(simulation, ext_f)
 
 # Create decay callback
 c = 0.7
 (_u0, _v0, n, u_len, v_len) = get_u0(simulation)
-(dx_ids, dr_ids, v_ids, ω_ids) = get_vel_ids(u_len, v_len, system)
+(dx_ids, dr_ids, v_ids, ω_ids) = get_vel_ids(u_len, v_len, system, system)
 v_decay!(integrator) = velocitydecay!(integrator, v_ids, c)
 cb = PeriodicCallback(v_decay!, 1 * dt; initial_affect=true)
 
 # Set algorithm for solver
 alg = RK4()
 
-# Ground truth parameter
-p_gt = [1.0]
-
-# Solve problem
-@time sol = solve(prob, alg, p=p_gt, dt = simulation.dt, maxiters = maxiters, callback = cb1);
+# Solve problem, corresponding to p = 1.0
+p_true = [1.0]
+@time sol = solve(prob, alg, p = p_true, dt=simulation.dt, maxiters=maxiters, callback=cb);
 
 # Extract final state
-u_final = get_state(sol.u[end], u_len, simulation)
+u_final = get_state(sol.u[end], u_len, simulation, simulation)
 
 # Extract initial state
 u0 = sol.u[1]
@@ -64,7 +64,7 @@ u0 = sol.u[1]
 end =#
 
 function predict(p)
-    return concrete_solve(prob, alg, u0, p, dt=simulation.dt, maxiters=maxiters, callback=cb1)
+    return get_state(concrete_solve(prob, alg, u0, p, dt=simulation.dt, maxiters=maxiters, callback=cb).u[end], u_len, simulation)
 end
 
 # Create loss function
