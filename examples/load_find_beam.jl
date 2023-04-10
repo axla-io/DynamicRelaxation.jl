@@ -1,6 +1,6 @@
 using Optimization, SciMLSensitivity, Zygote
 
-using OptimizationOptimJL, OptimizationOptimisers
+using OptimizationNLopt
 
 using Plots, GraphRecipes
 
@@ -10,7 +10,6 @@ using Graphs
 using StaticGraphs
 using DiffEqCallbacks
 using NBodySimulator
-#using DiffEqFlux
 
 # GENERATE DATA
 # -----------------------------------------------------
@@ -69,17 +68,10 @@ function l2loss(p)
     return loss, u_pred
 end
 
-function l1loss(p)
-    u_pred = predict(p)
-    loss = sum(abs, u_pred .- u_final)
-    return loss, u_pred
-end
-
 # Initial guess of p
 p0 = [0.3]
 sol_pred_init = solve(prob, alg, p = p0, dt = simulation.dt, maxiters = maxiters, callback = cb1);
 
-l2loss(p0)
 # Plot final state
 u_pred_init = get_state(sol_pred_init.u[end], u_len, simulation)
 
@@ -97,12 +89,7 @@ callback = function (p, l, prediction)
     iter += 1
 
     display(l)
-    u_pred = prediction #get_state(prediction.u[end], u_len, simulation)
-
-    # using `remake` to re-create our `prob` with current parameters `p`
-    #sol_pred = solve(remake(prob, p=p), alg, dt=simulation.dt, maxiters=maxiters, callback=cb)
-    # Plot final state
-    #u_pred = get_state(sol_pred.u[end], u_len)
+    u_pred = prediction
     plt = plot(u_final[1, :], u_final[3, :], lw = 1.5, label = "Ground Truth")
     plot!(plt, u_pred_init[1, :], u_pred_init[3, :], lw = 1.5, label = "Initial Prediction")
     plot!(plt, u_pred[1, :], u_pred[3, :], lw = 1.5, label = "Prediction, iter. $iter")
@@ -112,69 +99,29 @@ callback = function (p, l, prediction)
 
     push!(list_plots, plt)
 
-    # Tell sciml_train to not halt the optimization. If return true, then
-    # optimization stops.
     return false
 end
 
 # OPTIMIZE!
 # -----------------------------------------------------
-
-function axl_train(loss, θ, opt = OptimizationPolyalgorithms.PolyOpt(), adtype = nothing,
-                   args...;
-                   lower_bounds = nothing, upper_bounds = nothing, cb = nothing,
-                   callback = (args...) -> (false),
-                   maxiters = nothing, kwargs...)
-    adtype = Optimization.AutoFiniteDiff()
-    #adtype = Optimization.AutoZygote()
-
-    if !isnothing(cb)
-        callback = cb
-    end
-
-    optf = Optimization.OptimizationFunction((x, p) -> loss(x), adtype)
-    optprob = Optimization.OptimizationProblem(optf, θ; lb = lower_bounds,
-                                               ub = upper_bounds, kwargs...)
-
-    Optimization.solve(optprob, opt, args...; maxiters, callback = callback, kwargs...)
-end
-
-@time result_ode1 = axl_train(l2loss, p0,
-BFGS(initial_stepnorm = 0.0001), maxiters=3, callback=callback)
-
-#= result_ode1 = DiffEqFlux.sciml_train(l2loss, p0,
-OptimizationOptimisers.Adam(0.03), maxiters=20) =#
-#= 
-adtype = Optimization.AutoZygote()
+adtype = Optimization.AutoForwardDiff()
 optf1 = Optimization.OptimizationFunction((x, p) -> l2loss(x), adtype)
 optprob1 = Optimization.OptimizationProblem(optf1, p0)
 
-result_ode1 = Optimization.solve(optprob1, Adam(0.03),
-                                 #callback = callback,
-                                 maxiters = 20)
-
-                               @report_call  Optimization.solve(optprob1, Adam(0.03),
-                                 #callback = callback,
-                                 maxiters = 20) =#
-#= #Remake and solve with BFGS
-optf2 = Optimization.OptimizationFunction((x, p) -> l1loss(x), adtype)
-optprob2 = Optimization.OptimizationProblem(optf2, result_ode1.minimizer)
-
-result_ode2 = Optimization.solve(optprob2, BFGS(initial_stepnorm = 0.0001),
+@time result_ode = Optimization.solve(optprob1, NLopt.LD_LBFGS(),
                                  callback = callback,
-                                 maxiters = 10)
- =#
+                                 maxiters = 6)
+
 # VISUALIZE
 # -----------------------------------------------------
-p_1 = result_ode1.minimizer
+p_1 = result_ode.minimizer
 
 # Solve problem
-@time sol_pred = solve(remake(prob, p = p_1), alg, dt = simulation.dt, maxiters = maxiters,)
-                       #callback = cb);
+@time sol_pred = solve(remake(prob, p = p_1), alg, dt = simulation.dt, maxiters = maxiters, callback = cb1);
 
 # Plot final state
 u_pred = get_state(sol_pred.u[end], u_len, simulation)
 plot(u_final[1, :], u_final[3, :], label = "Ground Truth")
 plot!(u_pred[1, :], u_pred[3, :], label = "Prediction")
 
-animate(list_plots, "load_finding_bfgs.mp4", fps = 2)
+animate(list_plots, "load_finding_bfgs.gif", fps = 2)
