@@ -37,6 +37,8 @@ c = 0.7
 (_u0, _v0, n, u_len, v_len) = get_u0(simulation)
 (dx_ids, dr_ids, v_ids, ω_ids) = get_vel_ids(u_len, v_len, system)
 v_decay!(integrator) = velocitydecay!(integrator, v_ids, c)
+
+
 cb1 = PeriodicCallback(v_decay!, 1 * dt; initial_affect=true)
 
 # Set algorithm for solver
@@ -44,8 +46,8 @@ alg = RK4()
 
 # Solve problem, corresponding to p = 1.0
 p_true = [1.0]
-@time sol = solve(prob, alg, p = p_true, dt=simulation.dt, maxiters=maxiters, callback=cb);
-
+@time sol = solve(remake(prob, p = p_true), alg, dt=simulation.dt, maxiters=maxiters, callback=cb1);
+@report_opt solve(remake(prob, p = p_true), alg, dt=simulation.dt, maxiters=maxiters, callback=cb1)
 # Extract final state
 u_final = get_state(sol.u[end], u_len, simulation)
 
@@ -67,7 +69,7 @@ end
 
 # Create loss function
 function l2loss(p)
-    prediction = solve(prob, alg, p = p, dt = simulation.dt, maxiters = maxiters, callback = cb1)
+    prediction = solve(remake(prob, p = p, u0 = u0), alg, dt = simulation.dt, maxiters = maxiters, callback = cb1)
     u_pred = get_state(prediction.u[end], u_len, simulation)
     loss = sum(abs2, u_pred .- u_final)
     return loss, prediction
