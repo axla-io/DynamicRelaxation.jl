@@ -1,7 +1,7 @@
 name = "DynamicRelaxation"
 uuid = "01280ee2-506b-4fc2-bbeb-79eecb245451"
 author = ["Axel Larsson"]
-version = "0.1.0"
+version = "0.2.0"
 
 [deps]
 DiffEqBase = "2b5f629d-d688-5b77-993f-72d75c75574e"
