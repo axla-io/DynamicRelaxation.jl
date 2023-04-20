@@ -73,24 +73,36 @@ function DiffEqBase.ODEProblem(simulation::S, ext_f) where {T, S <: StructuralSi
         dr = @view du[dr_ids]
         ω = @view u[ω_ids]
 
-        # Initialize velocity and acceleration
-        a = @MVector zeros(u_t, 3)
-        s = @MVector zeros(u_t, 3)
-        τ = @MVector zeros(u_t, 3)
-        j = @MVector zeros(u_t, 3)
-        dω = @MVector zeros(u_t, 3)
+        # Initialize first node
+        a1 = @MVector zeros(u_t, 3)
+        s1 = @MVector zeros(u_t, 3)
+        τ1 = @MVector zeros(u_t, 3)
+        j1 = @MVector zeros(u_t, 3)
+        dω1 = @MVector zeros(u_t, 3)
 
-        @inbounds for i in 1:n
+        # Initialize second node
+        a2 = @MVector zeros(u_t, 3)
+        s2 = @MVector zeros(u_t, 3)
+        τ2 = @MVector zeros(u_t, 3)
+        j2 = @MVector zeros(u_t, 3)
+        dω2 = @MVector zeros(u_t, 3)
+
+        g = system.graph
+        es = collect(edges(g))
+        m = length(es)
+
+        @inbounds for i in 1:m
             # Reset accelerations
-            reset_accelerations!(a, s, τ, j, dω, _z, simulation)
-            body = bodies[i]
+            reset_accelerations!(a1, s1, τ1, j1, dω1, _z, simulation)
+            reset_accelerations!(a2, s2, τ2, j2, dω2, _z, simulation)
 
             # Accelerate system
-            accelerate_system!(a, τ, dω, u_v, system, simulation, body, ext_f, dr, ω, i, s,
-                               j, dt, u_t, p)
+            accelerate_system!(a1, τ1, dω1, a2, τ2, dω2, u_v, system, simulation, ext_f, dr,
+                               ω1, ω2, i, s1, j2, s2, j2, dt, u_t, p)
 
             # Update accelerations
-            update_accelerations!(du, a, dω, u_len, i, simulation)
+            update_accelerations!(du, a1, dω1, a2, dω2, es, u_len, i,
+                                  simulation)
         end
     end
 
@@ -111,6 +123,16 @@ function reset_accelerations!(a, s, τ, j, dω, _z,
                               simulation::T) where {T <: StructuralSimulation{Node3DOF}}
     @views a .*= _z
     @views s .*= _z
+    return nothing
+end
+
+get_nodes(e) = (e.src, e.dst)
+
+function update_accelerations!(du, a1, dω1, a2, dω2, es, u_len, i,
+                               simulation)
+    (id1, id2) = get_nodes(es[i])
+    update_accelerations!(du, a1, dω1, u_len, id1, simulation)
+    update_accelerations!(du, a2, dω2, u_len, id2, simulation)
     return nothing
 end
 
@@ -219,4 +241,16 @@ function accelerate_system!(a, τ, dω, u_v, system::StructuralGraphSystem{Node3
     constrain_acceleration!(a, body)
     apply_jns!(a, s, dt)
     return nothing
+end
+
+function accelerate_system!(a1, τ1, dω1, a2, τ2, dω2, u_v, system, simulation,
+                   ext_f, dr, ω1, ω2, i, s1,
+                   j1, s2, j2, dt, u_t, p)
+                #get ids for element nodesc
+
+                # get forces from element
+
+                # get nodal forces and constraints etx
+
+                   return nothing
 end
