@@ -243,14 +243,46 @@ function accelerate_system!(a, τ, dω, u_v, system::StructuralGraphSystem{Node3
     return nothing
 end
 
-function accelerate_system!(a1, τ1, dω1, a2, τ2, dω2, u_v, system, simulation,
-                   ext_f, dr, ω1, ω2, i, s1,
-                   j1, s2, j2, dt, u_t, p)
-                #get ids for element nodesc
+function accelerate_system!(a1, τ1, dω1, a2, τ2, dω2, u_v, system,
+                            simulation::RodSimulation{Node6DOF}, bodies, es, elem_props,
+                            ext_f, dr, ω1, ω2, i, s1,
+                            j1, s2, j2, dt, u_t, p)
+    # get ids for element nodes
+    es_i = es[i]
+    (id1, id2) = get_nodes(es_i)
+    body1 = bodies[id1]
+    body2 = bodies[id2]
 
-                # get forces from element
+    # get forces from element
+    rod_acceleration!(a1, a2, u_v, system, simulation, elem_props[i], es_i, s1, s2)
 
-                # get nodal forces and constraints etx
+    # get nodal accelerations and apply constraints
+    f_acceleration!(a1, τ1, ext_f, id1)
+    constrain_acceleration!(a1, τ1, body1)
+    apply_jns!(a1, s1, dt)
+    update_dω!(id1, ω1, τ1, dr1, j1, dω1, u_t, dt)
 
-                   return nothing
+    f_acceleration!(a2, τ2, ext_f, id2)
+    constrain_acceleration!(a2, τ2, body2)
+    apply_jns!(a2, s2, dt)
+    update_dω!(id2, ω2, τ2, dr2, j2, dω2, u_t, dt)
+    return nothing
+end
+
+function accelerate_system!(a1, τ1, dω1, a2, τ2, dω2, u_v, system,
+                            simulation::RodSimulation{Node3DOF}, bodies, es, elem_props,
+                            ext_f, dr, ω1, ω2, i, s1, j1, s2, j2, dt, u_t, p)
+
+    # get forces from element
+    rod_acceleration!(a1, a2, u_v, system, elem_props[i], id1, id2, s1, s2)
+
+    # get nodal accelerations and apply constraints
+    f_acceleration!(a1, ext_f, id1)
+    constrain_acceleration!(a1, body1)
+    apply_jns!(a1, s1, dt)
+
+    f_acceleration!(a2, ext_f, id2)
+    constrain_acceleration!(a2, body2)
+    apply_jns!(a2, s2, dt)
+    return nothing
 end
