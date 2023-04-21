@@ -1,6 +1,6 @@
 get_properties(ep) = (ep.E, ep.A, ep.Iy, ep.Iz, ep.G, ep.It)
 
-function rod_accelerate!(a, τ, u0, u1, body_i, body_j, ep, s, j)
+function rod_accelerate(a, τ, u0, u1, body_i, body_j, ep, s, j)
     # Get element properties
     (E, A, Iy, Iz, G, It) = get_properties(ep)
 
@@ -88,29 +88,25 @@ function rod_accelerate!(a, τ, u0, u1, body_i, body_j, ep, s, j)
     M0z_neg = (((M_y0 * element_vec[1] * z0[2]) * inv_rest_length) - ((M_z0 * element_vec[1] * y0[2]) * inv_rest_length) + ((M_x * ((y0[2] * z1[1]) - (z0[2] * y1[1]))) * 0.5))
 
     # Update forces
-    a[1] += F0_x
-    a[2] += F0_y
-    a[3] += F0_z
+    a = a + SA[F0_x, F0_y, F0_z]
 
-    τ[1] += M0x_pos + M0x_neg
-    τ[2] += M0y_pos + M0y_neg
-    τ[3] += M0z_pos + M0z_neg
+    τ = τ + SA[M0x_pos + M0x_neg, M0y_pos + M0y_neg, M0z_pos + M0z_neg]
 
     # Update stiffnesses
-    s .+= axial_stiffness * abs.(element_vec)
-    update_j!(y0 + y1, z0 + z1, x0 + x1, j, E, Iy, Iz, G, It, inv_rest_length)
+    s = s + SVector{3, eltype(s)}(axial_stiffness * abs.(element_vec))
+    j = j + update_j(y0 + y1, z0 + z1, x0 + x1, j, E, Iy, Iz, G, It, inv_rest_length)
 
-    return nothing
+    return a, τ, s, j
 end
 
-function update_j!(y_m, z_m, x_m, j, E, Iy, Iz, G, It, inv_rest_length)
+function update_j(y_m, z_m, x_m, j, E, Iy, Iz, G, It, inv_rest_length)
     # Update stiffness
-    j .+= (E .* (Iy .* abs.(y_m) + Iz .* abs.(z_m)) + G .* It .* abs.(x_m)) * inv_rest_length
-
-    return nothing
+    return SVector{3, eltype(j)}((E .* (Iy .* abs.(y_m) + Iz .* abs.(z_m)) + G .* It .* abs.(x_m)) * inv_rest_length)
 end
 
-function constrain_acceleration!(a, τ, body)
+function constrain_acceleration(a, τ, body)
+    a = MVector(a)
+    τ = MVector(τ)
     if body.constrained == true
         constraints = body.constraints
         _zero = zero(eltype(a))
@@ -124,28 +120,32 @@ function constrain_acceleration!(a, τ, body)
             end
         end
     end
-    return nothing
+    return SVector(a), SVector(τ)
 end
 
-function f_acceleration!(a, τ, ext_f, i)
-    for j = 1:3
-        a[j] += ext_f[i][j]
-        τ[j] += ext_f[i][j+3]
-    end
-    return nothing
+function f_acceleration(a, τ, ext_f, i)
+    a = SA[a[1] + ext_f[i][1], a[2] + ext_f[i][2], a[3] + ext_f[i][3]]
+    τ = SA[τ[1] + ext_f[i][4], τ[2] + ext_f[i][5], τ[3] + ext_f[i][6]]
+    return a, τ
 end
 
-function rod_acceleration!(a, τ, x, system::StructuralGraphSystem{Node6DOF}, body_i, vertex, s, j)
+function rod_acceleration(x, system::StructuralGraphSystem{Node6DOF}, body_i, vertex)
     graph = system.graph
     e_map = system.edgemap
     eps = system.elem_props
     x_vert = @view x[7*(vertex-1)+1:7*vertex]
     i_v = UInt8(vertex)
-    for neighbor in neighbors(graph, i_v)
+    u_t = eltype(x)
+    a = @SVector zeros(u_t, 3)
+    s = @SVector zeros(u_t, 3)
+    τ = @SVector zeros(u_t, 3)
+    j = @SVector zeros(u_t, 3)
+    
+    @inbounds for neighbor in neighbors(graph, i_v)
         body_j = system.bodies[neighbor]
         ep = eps[edge_index((i_v, neighbor), e_map)]
-        rod_accelerate!(a, τ, x_vert, @view(x[7*(neighbor-1)+1:7*neighbor]), body_i, body_j, ep, s, j)
+        (a, τ, s, j) = rod_accelerate(a, τ, x_vert, @view(x[7*(neighbor-1)+1:7*neighbor]), body_i, body_j, ep, s, j)
     end
 
-    return nothing
+    return a, τ, s, j
 end

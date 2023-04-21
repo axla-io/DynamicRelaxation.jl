@@ -1,4 +1,4 @@
-function rod_acceleration!(a, x, system::StructuralGraphSystem{Node3DOF}, vertex, s)
+function rod_acceleration(a, x, system::StructuralGraphSystem{Node3DOF}, vertex, s)
     graph = system.graph
     e_map = system.edgemap
     eps = system.elem_props
@@ -9,12 +9,12 @@ function rod_acceleration!(a, x, system::StructuralGraphSystem{Node3DOF}, vertex
     for neighbor in neighbors(graph, i_v)
         n_i = 3*(neighbor - 1) + 1
         ep = eps[edge_index((i_v, neighbor), e_map)]
-        rod_accelerate!(a, x_vert, @view(x[n_i:n_i+2]), ep, s)
+        rod_accelerate(a, x_vert, @view(x[n_i:n_i+2]), ep, s)
     end
     return nothing
 end
 
-function f_acceleration!(a, ext_f, i)
+function f_acceleration(a, ext_f, i)
     for j = 1:3
         a[j] += ext_f[i][j]
     end
@@ -23,13 +23,10 @@ end
 
 function s_min!(s)
     _one = one(eltype(s))
-    for i in axes(s, 1)
-        s[i] = max(s[i], _one)
-    end
-    return nothing
+    return SA[max(s[1], _one), max(s[2], _one), max(s[3], _one)]
 end
 
-function rod_accelerate!(a, x0, x1, ep, s)
+function rod_accelerate(a, x0, x1, ep, s)
     # Get element length
     element_vec = SVector{3,eltype(x0)}(x1[1] - x0[1], x1[2] - x0[2], x1[3] - x0[3])
     current_length = norm(element_vec)
@@ -47,7 +44,7 @@ function rod_accelerate!(a, x0, x1, ep, s)
 
 end
 
-function constrain_acceleration!(a, body)
+function constrain_acceleration(a, body)
     if body.constrained == true
         constraints = body.constraints
         _zero = zero(eltype(a))

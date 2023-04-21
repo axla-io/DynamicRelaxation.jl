@@ -64,30 +64,21 @@ function DiffEqBase.ODEProblem(simulation::S, ext_f) where {T, S <: StructuralSi
         # Get positions and element types
         u_v = @view u[1:u_len]
         u_t = eltype(u)
-        _z = zero(u_t)
 
         # Set translation vels
         @views du[dx_ids] .= u[v_ids]
 
-        # Set rotation vels
-        #dr = @view du[dr_ids]
+        # Get angular velocities
         ω = @view u[ω_ids]
 
-        # Initialize velocity and acceleration
-        a = @MVector zeros(u_t, 3)
-        s = @MVector zeros(u_t, 3)
-        τ = @MVector zeros(u_t, 3)
-        j = @MVector zeros(u_t, 3)
-        dω = @MVector zeros(u_t, 3)
-
         @inbounds for i in 1:n
-            # Reset accelerations
-            reset_accelerations!(a, s, τ, j, dω, _z, simulation)
+
+            # Get current body
             body = bodies[i]
 
             # Accelerate system
-            accelerate_system!(a, τ, dω, u_v, system, simulation, body, ext_f, du, dr_ids, ω, i, s,
-                               j, dt, u_t, p)
+            (a, dω) = accelerate_system(u_v, system, simulation, body, ext_f, du,
+                                                  dr_ids, ω, i, dt, u_t, p)
 
             # Update accelerations
             update_accelerations!(du, a, dω, u_len, i, simulation)
@@ -95,23 +86,6 @@ function DiffEqBase.ODEProblem(simulation::S, ext_f) where {T, S <: StructuralSi
     end
 
     return ODEProblem(ode_system!, uv0, simulation.tspan)
-end
-
-function reset_accelerations!(a, s, τ, j, dω, _z,
-                              simulation::T) where {T <: StructuralSimulation{Node6DOF}}
-    @views a .*= _z
-    @views s .*= _z
-    @views τ .*= _z
-    @views j .*= _z
-    @views dω .*= _z
-    return nothing
-end
-
-function reset_accelerations!(a, s, τ, j, dω, _z,
-                              simulation::T) where {T <: StructuralSimulation{Node3DOF}}
-    @views a .*= _z
-    @views s .*= _z
-    return nothing
 end
 
 function update_accelerations!(du, a, dω, u_len, i,
@@ -135,22 +109,22 @@ function generate_range(n, t1, t2)
 end
 
 function apply_jns!(a, s, dt)
-    s .*= dt^2.0 / 2.0
-    s_min!(s)
-    a .= a ./ s
-    return nothing
+    s = s * dt^2.0 / 2.0
+    s = s_min!(s)
+    a = a ./ s
+    return a
 end
 
-function update_dω!(i, ω, τ, du, dr_ids, j, dω, u_t, dt)
+function update_dω(i, ω, τ, du, dr_ids, j, u_t, dt)
     dω_id = 3 * (i - 1) + 1
     ω_i = SA[ω[dω_id], ω[dω_id + 1], ω[dω_id + 2]]
     set_rotation_vels!(du, dr_ids, ω_i, i)
 
     # Apply moment of inertia
-    j .*= dt^2.0 / 2.0
-    s_min!(j)
-    @views dω .= (τ - scross(ω_i, j .* ω_i)) ./ j
-    return nothing
+    j = j * dt^2.0 / 2.0
+    j = s_min!(j)
+    dω = (τ - scross(ω_i, j .* ω_i)) ./ j
+    return dω
 end
 
 function get_vel_ids(u_len, v_len, system::StructuralGraphSystem{Node3DOF})
@@ -200,23 +174,24 @@ function get_ids(start, step_inc, offset, finish)
     return hcat(rangelist...)'[:]
 end
 
-function accelerate_system!(a, τ, dω, u_v, system::StructuralGraphSystem{Node6DOF},
+function accelerate_system(u_v, system::StructuralGraphSystem{Node6DOF},
                             simulation::RodSimulation{Node6DOF}, body,
-                            ext_f, du, dr_ids, ω, i, s, j, dt, u_t, p)
-    rod_acceleration!(a, τ, u_v, system, body, i, s, j)
-    f_acceleration!(a, τ, ext_f, i)
-    constrain_acceleration!(a, τ, body)
-    apply_jns!(a, s, dt)
-    update_dω!(i, ω, τ, du, dr_ids, j, dω, u_t, dt)
-    return nothing
+                            ext_f, du, dr_ids, ω, i, dt, u_t, p)
+
+    (a, τ, s, j) = rod_acceleration(u_v, system, body, i)
+    (a, τ) = f_acceleration(a, τ, ext_f, i)
+    (a, τ) = constrain_acceleration(a, τ, body)
+    a = apply_jns!(a, s, dt)
+    dω = update_dω(i, ω, τ, du, dr_ids, j, u_t, dt)
+    return a, dω
 end
 
-function accelerate_system!(a, τ, dω, u_v, system::StructuralGraphSystem{Node3DOF},
+function accelerate_system(a, τ, dω, u_v, system::StructuralGraphSystem{Node3DOF},
                             simulation::RodSimulation{Node3DOF}, body,
                             ext_f, du, dr_ids, ω, i, s, j, dt, u_t, p)
-    rod_acceleration!(a, u_v, system, i, s)
-    f_acceleration!(a, ext_f, i)
-    constrain_acceleration!(a, body)
+    rod_acceleration(a, u_v, system, i, s)
+    f_acceleration(a, ext_f, i)
+    constrain_acceleration(a, body)
     apply_jns!(a, s, dt)
     return nothing
 end
