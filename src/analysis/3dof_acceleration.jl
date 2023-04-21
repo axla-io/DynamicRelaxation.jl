@@ -1,16 +1,13 @@
-function rod_acceleration!(a, x, system::StructuralGraphSystem{Node3DOF}, vertex, s)
-    graph = system.graph
-    e_map = system.edgemap
-    eps = system.elem_props
-    v_i = 3*(vertex - 1) + 1
-    x_vert = @view x[v_i:v_i+2]
-    i_v = UInt8(vertex)
+function rod_acceleration!(a1, a2, x, system::StructuralGraphSystem{Node3DOF}, ep, id1, id2, s1, s2)
+    
+    v_1 = 3*(id1 - 1) + 1
+    x_1 = @view x[v_1:v_1+2]
 
-    for neighbor in neighbors(graph, i_v)
-        n_i = 3*(neighbor - 1) + 1
-        ep = eps[edge_index((i_v, neighbor), e_map)]
-        rod_accelerate!(a, x_vert, @view(x[n_i:n_i+2]), ep, s)
-    end
+    v_2 = 3*(id2 - 1) + 1
+    x_2 = @view x[v_2:v_2+2]
+
+    rod_accelerate!(a1, a2, x_1, x_2, ep, s1, s2)
+
     return nothing
 end
 
@@ -24,12 +21,12 @@ end
 function s_min!(s)
     _one = one(eltype(s))
     for i in axes(s, 1)
-        s[i] = max(s[i], _one)
+        s[i] = max(s[i], 0.5_one)
     end
     return nothing
 end
 
-function rod_accelerate!(a, x0, x1, ep, s)
+function rod_accelerate!(a1, a2, x0, x1, ep, s1, s2)
     # Get element length
     element_vec = SVector{3,eltype(x0)}(x1[1] - x0[1], x1[2] - x0[2], x1[3] - x0[3])
     current_length = norm(element_vec)
@@ -41,8 +38,12 @@ function rod_accelerate!(a, x0, x1, ep, s)
     # Element internal forces
     axial_stiffness = (ep.E * ep.A) / rest_length
     N = axial_stiffness * extension  # Unit: [N]
-    a .+= N * element_vec
-    s .+= axial_stiffness * abs.(element_vec)
+    F = N * element_vec
+    a1 .+= F
+    a2 .-= F
+
+    s1 .+= axial_stiffness * abs.(element_vec)
+    s2 .+= axial_stiffness * abs.(element_vec)
     return nothing
 
 end

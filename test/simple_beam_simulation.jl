@@ -39,8 +39,9 @@ using Test
     alg = RK4()
 
     # Solve problem
-    @time sol = solve(prob, alg, dt = simulation.dt, maxiters = maxiters, callback = cb1, verbose = false)
+    @time sol = solve(prob, alg, dt = simulation.dt, maxiters = maxiters, callback = cb1, verbose = false);
 
+    #@profview solve(prob, alg, dt = simulation.dt, maxiters = maxiters, callback = cb1, verbose = false);
     # Plot final state
     u_final = get_state(sol.u[end], u_len, simulation)
     #=

@@ -61,5 +61,6 @@ using Test
         end
 
         # Save the frames as a gif
-        gif(anim, fps = 20) =#
+        gif(anim, fps = 20) 
+        =#
 end
