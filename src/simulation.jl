@@ -67,10 +67,10 @@ function DiffEqBase.ODEProblem(simulation::S, ext_f) where {T, S <: StructuralSi
         _z = zero(u_t)
 
         # Set translation vels
-        du[dx_ids] = @view u[v_ids]
+        @views du[dx_ids] .= u[v_ids]
 
         # Set rotation vels
-        dr = @view du[dr_ids]
+        #dr = @view du[dr_ids]
         ω = @view u[ω_ids]
 
         # Initialize velocity and acceleration
@@ -86,7 +86,7 @@ function DiffEqBase.ODEProblem(simulation::S, ext_f) where {T, S <: StructuralSi
             body = bodies[i]
 
             # Accelerate system
-            accelerate_system!(a, τ, dω, u_v, system, simulation, body, ext_f, dr, ω, i, s,
+            accelerate_system!(a, τ, dω, u_v, system, simulation, body, ext_f, du, dr_ids, ω, i, s,
                                j, dt, u_t, p)
 
             # Update accelerations
@@ -141,10 +141,10 @@ function apply_jns!(a, s, dt)
     return nothing
 end
 
-function update_dω!(i, ω, τ, dr, j, dω, u_t, dt)
+function update_dω!(i, ω, τ, du, dr_ids, j, dω, u_t, dt)
     dω_id = 3 * (i - 1) + 1
     ω_i = SA[ω[dω_id], ω[dω_id + 1], ω[dω_id + 2]]
-    set_rotation_vels!(dr, ω_i, i)
+    set_rotation_vels!(du, dr_ids, ω_i, i)
 
     # Apply moment of inertia
     j .*= dt^2.0 / 2.0
@@ -202,18 +202,18 @@ end
 
 function accelerate_system!(a, τ, dω, u_v, system::StructuralGraphSystem{Node6DOF},
                             simulation::RodSimulation{Node6DOF}, body,
-                            ext_f, dr, ω, i, s, j, dt, u_t, p)
+                            ext_f, du, dr_ids, ω, i, s, j, dt, u_t, p)
     rod_acceleration!(a, τ, u_v, system, body, i, s, j)
     f_acceleration!(a, τ, ext_f, i)
     constrain_acceleration!(a, τ, body)
     apply_jns!(a, s, dt)
-    update_dω!(i, ω, τ, dr, j, dω, u_t, dt)
+    update_dω!(i, ω, τ, du, dr_ids, j, dω, u_t, dt)
     return nothing
 end
 
 function accelerate_system!(a, τ, dω, u_v, system::StructuralGraphSystem{Node3DOF},
                             simulation::RodSimulation{Node3DOF}, body,
-                            ext_f, dr, ω, i, s, j, dt, u_t, p)
+                            ext_f, du, dr_ids, ω, i, s, j, dt, u_t, p)
     rod_acceleration!(a, u_v, system, i, s)
     f_acceleration!(a, ext_f, i)
     constrain_acceleration!(a, body)
