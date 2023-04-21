@@ -40,7 +40,7 @@ using Test
 
     # Solve problem
     @time sol = solve(prob, alg, dt = simulation.dt, maxiters = maxiters, callback = cb1, verbose = false);
-    # Svec 0.019509 seconds (63.80 k allocations: 5.343 MiB)
+
     # Plot final state
     u_final = get_state(sol.u[end], u_len, simulation)
     #=

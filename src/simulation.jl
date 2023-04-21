@@ -78,7 +78,7 @@ function DiffEqBase.ODEProblem(simulation::S, ext_f) where {T, S <: StructuralSi
 
             # Accelerate system
             (a, dω) = accelerate_system(u_v, system, simulation, body, ext_f, du,
-                                                  dr_ids, ω, i, dt, u_t, p)
+                                        dr_ids, ω, i, dt, u_t, p)
 
             # Update accelerations
             update_accelerations!(du, a, dω, u_len, i, simulation)
@@ -175,9 +175,8 @@ function get_ids(start, step_inc, offset, finish)
 end
 
 function accelerate_system(u_v, system::StructuralGraphSystem{Node6DOF},
-                            simulation::RodSimulation{Node6DOF}, body,
-                            ext_f, du, dr_ids, ω, i, dt, u_t, p)
-
+                           simulation::RodSimulation{Node6DOF}, body,
+                           ext_f, du, dr_ids, ω, i, dt, u_t, p)
     (a, τ, s, j) = rod_acceleration(u_v, system, body, i)
     (a, τ) = f_acceleration(a, τ, ext_f, i)
     (a, τ) = constrain_acceleration(a, τ, body)
@@ -186,12 +185,12 @@ function accelerate_system(u_v, system::StructuralGraphSystem{Node6DOF},
     return a, dω
 end
 
-function accelerate_system(a, τ, dω, u_v, system::StructuralGraphSystem{Node3DOF},
-                            simulation::RodSimulation{Node3DOF}, body,
-                            ext_f, du, dr_ids, ω, i, s, j, dt, u_t, p)
-    rod_acceleration(a, u_v, system, i, s)
-    f_acceleration(a, ext_f, i)
-    constrain_acceleration(a, body)
-    apply_jns!(a, s, dt)
-    return nothing
+function accelerate_system(u_v, system::StructuralGraphSystem{Node3DOF},
+                           simulation::RodSimulation{Node3DOF}, body,
+                           ext_f, du, dr_ids, ω, i, dt, u_t, p)
+    (a, s) = rod_acceleration(u_v, system, i)
+    a = f_acceleration(a, ext_f, i)
+    a = constrain_acceleration(a, body)
+    a = apply_jns!(a, s, dt)
+    return (a, a)
 end
