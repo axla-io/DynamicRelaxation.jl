@@ -89,6 +89,7 @@ function DiffEqBase.ODEProblem(simulation::S, ext_f) where {T, S <: StructuralSi
 
         g = system.graph
         es = collect(edges(g))
+        elem_props = system.elem_props
         m = length(es)
 
         @inbounds for i in 1:m
@@ -97,8 +98,9 @@ function DiffEqBase.ODEProblem(simulation::S, ext_f) where {T, S <: StructuralSi
             reset_accelerations!(a2, s2, τ2, j2, dω2, _z, simulation)
 
             # Accelerate system
-            accelerate_system!(a1, τ1, dω1, a2, τ2, dω2, u_v, system, simulation, ext_f, dr,
-                               ω1, ω2, i, s1, j2, s2, j2, dt, u_t, p)
+            accelerate_system!(a1, τ1, dω1, a2, τ2, dω2, u_v, system, simulation, bodies,
+                               es, elem_props, ext_f, dr, ω, i, s1, j1, s2, j2, dt,
+                               u_t, p)
 
             # Update accelerations
             update_accelerations!(du, a1, dω1, a2, dω2, es, u_len, i,
@@ -128,8 +130,9 @@ end
 
 get_nodes(e) = (e.src, e.dst)
 
+
 function update_accelerations!(du, a1, dω1, a2, dω2, es, u_len, i,
-                               simulation)
+                               simulation::S) where {T, S <: StructuralSimulation{T}}
     (id1, id2) = get_nodes(es[i])
     update_accelerations!(du, a1, dω1, u_len, id1, simulation)
     update_accelerations!(du, a2, dω2, u_len, id2, simulation)
@@ -137,18 +140,19 @@ function update_accelerations!(du, a1, dω1, a2, dω2, es, u_len, i,
 end
 
 function update_accelerations!(du, a, dω, u_len, i,
-                               simulation::T) where {T <: StructuralSimulation{Node6DOF}}
-    d_id = (u_len) + 6 * (i - 1) + 1
-    @views du[d_id:(d_id + 2)] .= a
-    @views du[(d_id + 3):(d_id + 5)] .= dω
-    return nothing
+    simulation::T) where {T <: StructuralSimulation{Node3DOF}}
+d_id = (u_len) + 3 * (i - 1) + 1
+@views du[d_id:(d_id + 2)] .= a
+return nothing
 end
 
+
 function update_accelerations!(du, a, dω, u_len, i,
-                               simulation::T) where {T <: StructuralSimulation{Node3DOF}}
-    d_id = (u_len) + 3 * (i - 1) + 1
-    @views du[d_id:(d_id + 2)] .= a
-    return nothing
+    simulation::T) where {T <: StructuralSimulation{Node6DOF}}
+d_id = (u_len) + 6 * (i - 1) + 1
+@views du[d_id:(d_id + 2)] .= a
+@views du[(d_id + 3):(d_id + 5)] .= dω
+return nothing
 end
 
 function generate_range(n, t1, t2)
@@ -222,56 +226,40 @@ function get_ids(start, step_inc, offset, finish)
     return hcat(rangelist...)'[:]
 end
 
-function accelerate_system!(a, τ, dω, u_v, system::StructuralGraphSystem{Node6DOF},
-                            simulation::RodSimulation{Node6DOF}, body,
-                            ext_f, dr, ω, i, s, j, dt, u_t, p)
-    rod_acceleration!(a, τ, u_v, system, body, i, s, j)
-    f_acceleration!(a, τ, ext_f, i)
-    constrain_acceleration!(a, τ, body)
-    apply_jns!(a, s, dt)
-    update_dω!(i, ω, τ, dr, j, dω, u_t, dt)
-    return nothing
-end
-
-function accelerate_system!(a, τ, dω, u_v, system::StructuralGraphSystem{Node3DOF},
-                            simulation::RodSimulation{Node3DOF}, body,
-                            ext_f, dr, ω, i, s, j, dt, u_t, p)
-    rod_acceleration!(a, u_v, system, i, s)
-    f_acceleration!(a, ext_f, i)
-    constrain_acceleration!(a, body)
-    apply_jns!(a, s, dt)
-    return nothing
-end
-
 function accelerate_system!(a1, τ1, dω1, a2, τ2, dω2, u_v, system,
                             simulation::RodSimulation{Node6DOF}, bodies, es, elem_props,
-                            ext_f, dr, ω1, ω2, i, s1,
+                            ext_f, dr, ω, i, s1,
                             j1, s2, j2, dt, u_t, p)
     # get ids for element nodes
-    es_i = es[i]
-    (id1, id2) = get_nodes(es_i)
+    (id1, id2) = get_nodes(es[i])
     body1 = bodies[id1]
     body2 = bodies[id2]
 
     # get forces from element
-    rod_acceleration!(a1, a2, u_v, system, simulation, elem_props[i], es_i, s1, s2)
+    rod_acceleration!(a1, a2, τ1, τ2, u_v, system, elem_props[i], id1, id2, body1, body2,
+                      s1, s2, j1, j2)
 
     # get nodal accelerations and apply constraints
     f_acceleration!(a1, τ1, ext_f, id1)
     constrain_acceleration!(a1, τ1, body1)
     apply_jns!(a1, s1, dt)
-    update_dω!(id1, ω1, τ1, dr1, j1, dω1, u_t, dt)
+    update_dω!(id1, ω1, τ1, dr, j1, dω1, u_t, dt)
 
     f_acceleration!(a2, τ2, ext_f, id2)
     constrain_acceleration!(a2, τ2, body2)
     apply_jns!(a2, s2, dt)
-    update_dω!(id2, ω2, τ2, dr2, j2, dω2, u_t, dt)
+    update_dω!(id2, ω2, τ2, dr, j2, dω2, u_t, dt)
     return nothing
 end
 
 function accelerate_system!(a1, τ1, dω1, a2, τ2, dω2, u_v, system,
                             simulation::RodSimulation{Node3DOF}, bodies, es, elem_props,
-                            ext_f, dr, ω1, ω2, i, s1, j1, s2, j2, dt, u_t, p)
+                            ext_f, dr, ω, i, s1, j1, s2, j2, dt, u_t, p)
+
+    # get ids for element nodes
+    (id1, id2) = get_nodes(es[i])
+    body1 = bodies[id1]
+    body2 = bodies[id2]
 
     # get forces from element
     rod_acceleration!(a1, a2, u_v, system, elem_props[i], id1, id2, s1, s2)
