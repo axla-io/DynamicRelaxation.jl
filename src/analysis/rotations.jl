@@ -1,7 +1,7 @@
 function set_rotation_vels!(dr::AbstractVector{T}, ω_i, i) where {T <: Real}
     dr_id = 4 * (i - 1) + 1
 
-    dr_i = SVector{4, T}(@view(dr[dr_id:(dr_id + 3)]))
+    dr_i = SVector{4, T}(dr[dr_id], dr[dr_id+1], dr[dr_id+2], dr[dr_id+3])
 
     # Do rotation according to Rucker, “Integrating Rotations Using Nonunit Quaternions.”
     @views dr[dr_id:(dr_id + 3)] .= f_q_dot(dr_i, ω_i)
