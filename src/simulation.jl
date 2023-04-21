@@ -167,7 +167,7 @@ end
 function apply_jns!(a, s, dt)
     s .*= dt^2.0 / 2.0
     s_min!(s)
-    a .= a ./ (s .* 1)
+    a .= a ./ (2*s)
     return nothing
 end
 
@@ -179,7 +179,7 @@ function update_dω!(i, ω, τ, dr, j, dω, u_t, dt)
     # Apply moment of inertia
     j .*= dt^2.0 / 2.0
     s_min!(j)
-    @views dω .= (τ - scross(ω_i, j .* ω_i)) ./ j
+    @views dω .= (τ - scross(ω_i, j .* ω_i)) ./ 2j
     return nothing
 end
 
@@ -240,19 +240,19 @@ function accelerate_system!(a1, τ1, dω1, a2, τ2, dω2, u_v, system,
     body2 = bodies[id2]
 
     # get forces from element
-    #rod_acceleration!(a1, a2, τ1, τ2, u_v, system, elem_props[i], id1, id2, body1, body2,
-      #                s1, s2, j1, j2)
+    rod_acceleration!(a1, a2, τ1, τ2, u_v, system, elem_props[i], id1, id2, body1, body2,
+                      s1, s2, j1, j2)
 
     # get nodal accelerations and apply constraints
-    #f_acceleration!(a1, τ1, ext_f, id1)
+    f_acceleration!(a1, τ1, ext_f, id1)
     constrain_acceleration!(a1, τ1, body1)
     apply_jns!(a1, s1, dt)
-    update_dω!(id1, ω1, τ1, dr, j1, dω1, u_t, dt)
+    update_dω!(id1, ω, τ1, dr, j1, dω1, u_t, dt)
 
-    #f_acceleration!(a2, τ2, ext_f, id2)
+    f_acceleration!(a2, τ2, ext_f, id2)
     constrain_acceleration!(a2, τ2, body2)
     apply_jns!(a2, s2, dt)
-    update_dω!(id2, ω2, τ2, dr, j2, dω2, u_t, dt)
+    update_dω!(id2, ω, τ2, dr, j2, dω2, u_t, dt)
     return nothing
 end
 

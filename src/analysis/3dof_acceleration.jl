@@ -21,7 +21,7 @@ end
 function s_min!(s)
     _one = one(eltype(s))
     for i in axes(s, 1)
-        s[i] = max(s[i], _one)
+        s[i] = max(s[i], 0.5_one)
     end
     return nothing
 end

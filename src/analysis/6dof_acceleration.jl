@@ -202,11 +202,11 @@ end
 
 function rod_acceleration!(a1, a2, τ1, τ2, x, system::StructuralGraphSystem{Node6DOF}, ep,
                            id1, id2, body1, body2, s1, s2, j1, j2)
-    v_1 = 3 * (id1 - 1) + 1
-    x_1 = @view x[v_1:(v_1 + 2)]
+    v_1 = 7 * (id1 - 1) + 1
+    x_1 = @view x[v_1:(v_1 + 6)]
 
-    v_2 = 3 * (id2 - 1) + 1
-    x_2 = @view x[v_2:(v_2 + 2)]
+    v_2 = 7 * (id2 - 1) + 1
+    x_2 = @view x[v_2:(v_2 + 6)]
 
     rod_accelerate!(a1, a2, τ1, τ2, x_1, x_2, body1, body2, ep, s1, s2, j1, j2)
 
