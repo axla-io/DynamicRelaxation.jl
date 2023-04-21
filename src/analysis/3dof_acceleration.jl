@@ -1,4 +1,5 @@
 function rod_acceleration!(a1, a2, x, system::StructuralGraphSystem{Node3DOF}, ep, id1, id2, s1, s2)
+    
     v_1 = 3*(id1 - 1) + 1
     x_1 = @view x[v_1:v_1+2]
 
@@ -37,8 +38,9 @@ function rod_accelerate!(a1, a2, x0, x1, ep, s1, s2)
     # Element internal forces
     axial_stiffness = (ep.E * ep.A) / rest_length
     N = axial_stiffness * extension  # Unit: [N]
-    a1 .+= N * element_vec
-    a2 .-= N * element_vec
+    F = N * element_vec
+    a1 .+= F
+    a2 .-= F
 
     s1 .+= axial_stiffness * abs.(element_vec)
     s2 .+= axial_stiffness * abs.(element_vec)
