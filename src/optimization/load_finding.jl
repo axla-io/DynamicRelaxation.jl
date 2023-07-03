@@ -21,6 +21,6 @@ function accelerate_system(u_v, system::StructuralGraphSystem{Node6DOF},
     (a, τ) = f_acceleration(a, τ, ext_f, i, p)
     (a, τ) = constrain_acceleration(a, τ, body)
     a = apply_jns!(a, s, dt)
-    dω = update_dω(i, ω, τ, du, dr_ids, j, u_t, dt)
+    dω = update_dω(i, ω, τ, u_v, du, dr_ids, j, u_t, dt)
     return a, dω
 end

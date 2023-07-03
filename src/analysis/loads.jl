@@ -25,7 +25,6 @@ function point_loads(vs, is, system)
     loads = Vector{SVector{v_dim,Float64}}()
     for i in 1:Int(nv(system.graph))
         if i in is
-            #@infiltrate
             load = SVector{v_dim,Float64}(vs[findfirst(isequal(i), is)])
         else
             load = @SVector zeros(v_dim)

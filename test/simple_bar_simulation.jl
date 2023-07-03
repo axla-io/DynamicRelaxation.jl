@@ -51,15 +51,16 @@ using Test
     @test isapprox(sum(abs, u_final .- u_final_true), 0.0, atol = 1e-7)
     #= 
         # Select frames for animation
-        itt = generate_range(100, 1, length(sol.u))
+        itt = generate_range(100, 1, (length(sol.u)-1)/7)
         u_red = sol.u[itt]
 
         # Loop over the time values and create a plot for each frame
         anim = @animate for i in axes(u_red, 1)
             u_final = get_state(u_red[i], u_len, simulation)
-            plot(u_final[1, :], u_final[3, :])
+            plot(u_final[1, :], u_final[3, :], label = "", ylims = (-0.06, 0.0))
         end
 
         # Save the frames as a gif
-        gif(anim, fps = 20) =#
+        gif(anim, "hanging_chain.gif", fps = 20) 
+        =#
 end
