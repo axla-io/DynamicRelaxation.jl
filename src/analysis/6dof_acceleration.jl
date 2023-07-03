@@ -16,8 +16,7 @@ function rod_accelerate(a, τ, u0, u1, body_i, body_j, ep, s, j)
     qv_i = SVector{3, eltype(u0)}(u0[5], u0[6], u0[7])
     qv_j = SVector{3, eltype(u0)}(u1[5], u1[6], u1[7])
 
-    cs_i = body_i.cs
-    cs_j = body_j.cs
+    cs_i = cs_j = ep.cs # TODO: allow for prebent structures
 
     # Get local endplane orientations
     y0 = q_vec_rot(qs_i, qv_i, cs_i.y)
