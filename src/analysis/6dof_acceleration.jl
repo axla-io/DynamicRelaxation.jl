@@ -67,17 +67,15 @@ function rod_accelerate(a, τ, u0, u1, body_i, body_j, ep, s, j, accurate_angles
                     +
                     (theta_z0 * theta_z1)) + 4.0 * (theta_y1^2 + theta_z1^2))
     extension = ext_a + ext_b # Unit: [m]
-    if kirchhoff
-        extension = current_length - rest_length # the normal force is a penalizing factor
-    end
 
     # +++ FORCES +++
     # Element internal forces
     inv_rest_length = 1.0 / rest_length
     axial_stiffness = (E * A) * inv_rest_length
 
-    if kirchhoff # set axial stiffness to be equal to bending stiffness to reduce the stiffness of the problem
-        axial_stiffness = (E * (Iy + Iz) + G * It) * inv_rest_length
+    if kirchhoff 
+        extension = current_length - rest_length # the normal force is a penalizing factor
+        axial_stiffness = (E * (Iy + Iz) + G * It) * inv_rest_length # set axial stiffness to be equal to bending stiffness to reduce the stiffness of the problem
     end
     N = axial_stiffness * extension  # Unit: [N]
 
@@ -96,12 +94,18 @@ function rod_accelerate(a, τ, u0, u1, body_i, body_j, ep, s, j, accurate_angles
         M_x = ((G * It) * inv_rest_length) * theta_x            #Unit: [Nm]
 
     else # Decouple moment and forces
+        N2 = (E * A) * inv_rest_length * ext_b  # Unit: [N] Only bowing contribution
+        # N2 = 0 # testing if bowing is needed
         # +++ MOMENTS +++
-        M_y0 = (((E * Iy) * inv_rest_length) * ((4.0 * theta_y0) + (2.0 * theta_y1)))           #Unit: [Nm]
-        M_z0 = (((E * Iz) * inv_rest_length) * ((4.0 * theta_z0) + (2.0 * theta_z1)))           #Unit: [Nm]
+        M_y0 = ((N2 * r_30) * ((4.0 * theta_y0) - theta_y1)) +
+               (((E * Iy) * inv_rest_length) * ((4.0 * theta_y0) + (2.0 * theta_y1)))           #Unit: [Nm]
+        M_z0 = ((N2 * r_30) * ((4.0 * theta_z0) - theta_z1)) +
+               (((E * Iz) * inv_rest_length) * ((4.0 * theta_z0) + (2.0 * theta_z1)))           #Unit: [Nm]
 
-        M_y1 = (((E * Iy) * inv_rest_length) * ((4.0 * theta_y1) + (2.0 * theta_y0)))           #Unit: [Nm]
-        M_z1 = (((E * Iz) * inv_rest_length) * ((4.0 * theta_z1) + (2.0 * theta_z0)))           #Unit: [Nm]
+        M_y1 = ((N2 * r_30) * ((4.0 * theta_y1) - theta_y0)) +
+               (((E * Iy) * inv_rest_length) * ((4.0 * theta_y1) + (2.0 * theta_y0)))           #Unit: [Nm]
+        M_z1 = ((N2 * r_30) * ((4.0 * theta_z1) - theta_z0)) +
+               (((E * Iz) * inv_rest_length) * ((4.0 * theta_z1) + (2.0 * theta_z0)))           #Unit: [Nm]
 
         M_x = ((G * It) * inv_rest_length) * theta_x            #Unit: [Nm]
     end
