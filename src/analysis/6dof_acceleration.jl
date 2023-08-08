@@ -1,6 +1,13 @@
 get_properties(ep) = (ep.E, ep.A, ep.Iy, ep.Iz, ep.G, ep.It)
 
-function rod_accelerate(a, τ, u0, u1, body_i, body_j, ep, s, j)
+function rod_accelerate(a, τ, u0, u1, body_i, body_j, ep, s, j, accurate_angles = false,
+                        kirchhoff = false)
+
+    # Set accurate angles
+    if kirchhoff == true
+        accurate_angles = true
+    end
+
     # Get element properties
     (E, A, Iy, Iz, G, It) = get_properties(ep)
 
@@ -33,14 +40,23 @@ function rod_accelerate(a, τ, u0, u1, body_i, body_j, ep, s, j)
 
     #Bending angle changes around local axes
     inv_current_length = 1.0 / current_length
-    theta_y0 = (z0 ⋅ element_vec) * inv_current_length
-    theta_z0 = -(y0 ⋅ element_vec) * inv_current_length #NB! Negative sign
+    if accurate_angles == false
+        theta_y0 = (z0 ⋅ element_vec) * inv_current_length
+        theta_z0 = -(y0 ⋅ element_vec) * inv_current_length #NB! Negative sign
 
-    theta_y1 = (z1 ⋅ element_vec) * inv_current_length
-    theta_z1 = -(y1 ⋅ element_vec) * inv_current_length #NB! Negative sign
+        theta_y1 = (z1 ⋅ element_vec) * inv_current_length
+        theta_z1 = -(y1 ⋅ element_vec) * inv_current_length #NB! Negative sign
+        #Twist angle change around element axis
+        theta_x = ((y0 ⋅ z1) - (y1 ⋅ z0)) * 0.5
+    else
+        theta_y0 = acos((y0 ⋅ element_vec) * inv_current_length) - π / 2
+        theta_z0 = acos((z0 ⋅ element_vec) * inv_current_length) - π / 2
 
-    #Twist angle change around element axis
-    theta_x = ((y0 ⋅ z1) - (y1 ⋅ z0)) * 0.5
+        theta_y1 = acos((y1 ⋅ element_vec) * inv_current_length) - π / 2
+        theta_z1 = acos((z1 ⋅ element_vec) * inv_current_length) - π / 2
+        #Twist angle change around element axis
+        theta_x = acos(y0 ⋅ y1)
+    end
 
     # +++ AXIAL +++
     r_30 = rest_length / 30.0
@@ -51,25 +67,44 @@ function rod_accelerate(a, τ, u0, u1, body_i, body_j, ep, s, j)
                     +
                     (theta_z0 * theta_z1)) + 4.0 * (theta_y1^2 + theta_z1^2))
     extension = ext_a + ext_b # Unit: [m]
+    if kirchhoff
+        extension = current_length - rest_length # the normal force is a penalizing factor
+    end
 
     # +++ FORCES +++
     # Element internal forces
     inv_rest_length = 1.0 / rest_length
     axial_stiffness = (E * A) * inv_rest_length
+
+    if kirchhoff # set axial stiffness to be equal to bending stiffness to reduce the stiffness of the problem
+        axial_stiffness = (E * (Iy + Iz) + G * It) * inv_rest_length
+    end
     N = axial_stiffness * extension  # Unit: [N]
 
-    # +++ MOMENTS +++
-    M_y0 = ((N * r_30) * ((4.0 * theta_y0) - theta_y1)) +
-           (((E * Iy) * inv_rest_length) * ((4.0 * theta_y0) + (2.0 * theta_y1)))           #Unit: [Nm]
-    M_z0 = ((N * r_30) * ((4.0 * theta_z0) - theta_z1)) +
-           (((E * Iz) * inv_rest_length) * ((4.0 * theta_z0) + (2.0 * theta_z1)))           #Unit: [Nm]
+    if kirchhoff == false
+        # +++ MOMENTS +++
+        M_y0 = ((N * r_30) * ((4.0 * theta_y0) - theta_y1)) +
+               (((E * Iy) * inv_rest_length) * ((4.0 * theta_y0) + (2.0 * theta_y1)))           #Unit: [Nm]
+        M_z0 = ((N * r_30) * ((4.0 * theta_z0) - theta_z1)) +
+               (((E * Iz) * inv_rest_length) * ((4.0 * theta_z0) + (2.0 * theta_z1)))           #Unit: [Nm]
 
-    M_y1 = ((N * r_30) * ((4.0 * theta_y1) - theta_y0)) +
-           (((E * Iy) * inv_rest_length) * ((4.0 * theta_y1) + (2.0 * theta_y0)))           #Unit: [Nm]
-    M_z1 = ((N * r_30) * ((4.0 * theta_z1) - theta_z0)) +
-           (((E * Iz) * inv_rest_length) * ((4.0 * theta_z1) + (2.0 * theta_z0)))           #Unit: [Nm]
+        M_y1 = ((N * r_30) * ((4.0 * theta_y1) - theta_y0)) +
+               (((E * Iy) * inv_rest_length) * ((4.0 * theta_y1) + (2.0 * theta_y0)))           #Unit: [Nm]
+        M_z1 = ((N * r_30) * ((4.0 * theta_z1) - theta_z0)) +
+               (((E * Iz) * inv_rest_length) * ((4.0 * theta_z1) + (2.0 * theta_z0)))           #Unit: [Nm]
 
-    M_x = ((G * It) * inv_rest_length) * theta_x            #Unit: [Nm]
+        M_x = ((G * It) * inv_rest_length) * theta_x            #Unit: [Nm]
+
+    else # Decouple moment and forces
+        # +++ MOMENTS +++
+        M_y0 = (((E * Iy) * inv_rest_length) * ((4.0 * theta_y0) + (2.0 * theta_y1)))           #Unit: [Nm]
+        M_z0 = (((E * Iz) * inv_rest_length) * ((4.0 * theta_z0) + (2.0 * theta_z1)))           #Unit: [Nm]
+
+        M_y1 = (((E * Iy) * inv_rest_length) * ((4.0 * theta_y1) + (2.0 * theta_y0)))           #Unit: [Nm]
+        M_z1 = (((E * Iz) * inv_rest_length) * ((4.0 * theta_z1) + (2.0 * theta_z0)))           #Unit: [Nm]
+
+        M_x = ((G * It) * inv_rest_length) * theta_x            #Unit: [Nm]
+    end
 
     #Force start
     F0_x = inv_rest_length *
@@ -135,7 +170,7 @@ function get_constrained(constraints::SVector{7, Bool}, x1::S,
                          x2::S) where {T, S <: SVector{3, T}}
     x1_c = SVector{3, T}(constraints[i] ? zero(T) : x1[i]
                          for i in axes(x1, 1))
-    x2_c = SVector{3, T}(constraints[i+3] ? zero(T) : x2[i]
+    x2_c = SVector{3, T}(constraints[i + 3] ? zero(T) : x2[i]
                          for i in axes(x2, 1))
     return x1_c, x2_c
 end
