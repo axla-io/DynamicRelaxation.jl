@@ -25,6 +25,7 @@ include("analysis/constraints.jl")
 include("analysis/callbacks.jl")
 include("analysis/3dof_acceleration.jl")
 include("analysis/6dof_acceleration.jl")
+include("analysis/bigon_system.jl")
 include("optimization/load_finding.jl")
 
 # Elements and nodes
@@ -43,7 +44,7 @@ export Px, Py, Pz, Mx, My, Mz, uniform_load, point_loads
 export StructuralGraphSystem, default_system
 
 # Simulation
-export LoadScaleRodSimulation, RodSimulation, get_u0, get_vel_ids, get_state
+export LoadScaleRodSimulation, RodSimulation, BigonRodSimulation, get_u0, get_vel_ids, get_state
 
 # Plotting
 export generate_range
