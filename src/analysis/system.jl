@@ -22,7 +22,28 @@ function edge_index(e::Tuple{UInt8, UInt8}, e_map::Dict{Tuple{UInt8, UInt8}, Int
     return res
 end
 
-function default_system(graph, node_type, sys_type, n_pt)
+function get_arc_ic(n_elem, l_init, alpha)
+    gamma = alpha / n_elem
+    r = sqrt(l_init^2/(2*(1-cos(gamma)))) # Calculate radius of circle
+    pts = zeros(3, n_elem + 1)
+    R_mat = [cos(pi/2 - alpha/2) 0 sin(pi/2 - alpha/2)
+    0 1 0
+    -sin(pi/2 - alpha/2) 0 cos(pi/2 - alpha/2)]
+    temp_pt = zeros(3)
+    for (i, t) in enumerate(pi:-gamma:pi-alpha)
+        pts[1,i] = r*cos(t)
+        pts[3,i] = r*sin(t) 
+
+        pts[:,i] .= R_mat * pts[:,i]
+        if i==1 
+            temp_pt=pts[:,i] 
+        end
+        pts[:,i] .-= temp_pt
+    end
+    return [pts[:,i] for i in axes(pts,2)]
+end
+
+function default_system(graph, node_type, sys_type, n_pt; alpha = pi/4)
     n_elem = n_pt - 1
 
     if node_type == Node3DOF
@@ -61,14 +82,16 @@ function default_system(graph, node_type, sys_type, n_pt)
         np_fix = node_type(@SVector(zeros(3)), true, pinned(n_dof))
         np_free = [node_type(SVector{3, Float64}([(i - 1) * l_init, 0.0, 0.0]), false,
                             free(n_dof)) for i in 2:(n_pt - 1)]
-        #= np_free1 = [node_type(SVector{3, Float64}([(i - 1) * l_init, 0.0, 0.0]), false,
-                              free(n_dof)) for i in (2):(n_elem / 2 - 1)]
-        np_free2 = [node_type(SVector{3, Float64}([(i - 1) * l_init, 0.0, 0.001]), false,
-                              free(n_dof)) for i in (n_elem / 2):(n_elem / 2 + 2)]
-        np_free3 = [node_type(SVector{3, Float64}([(i - 1) * l_init, 0.0, 0.0]), false,
-                              free(n_dof)) for i in (n_elem / 2 + 3):(n_pt - 1)]
-        np_free = vcat(np_free1, np_free2, np_free3) =#
         np_roller = node_type(SVector{3, Float64}([n_elem * l_init, 0.0, 0.0]), true,
+                              roller(n_dof, :x))
+        nodes = vcat(np_fix, np_free..., np_roller) # Assuming same order as in graph
+
+    elseif sys_type == :elastica_arc_ic
+        node_pts = get_arc_ic(n_elem, l_init, alpha)
+        np_fix = node_type(@SVector(zeros(3)), true, pinned(n_dof))
+        np_free = [node_type(SVector{3, Float64}(node_pts[i]...), false,
+                            free(n_dof)) for i in 2:(n_pt - 1)]
+        np_roller = node_type(SVector{3, Float64}(node_pts[n_pt]...), true,
                               roller(n_dof, :x))
         nodes = vcat(np_fix, np_free..., np_roller) # Assuming same order as in graph
 
