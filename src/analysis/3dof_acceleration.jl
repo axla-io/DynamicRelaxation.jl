@@ -1,10 +1,11 @@
-function rod_acceleration(x, system::StructuralGraphSystem{Node3DOF}, vertex)
+function rod_acceleration(x, system::StructuralGraphSystem{Node3DOF}, vertex,)
     graph = system.graph
     e_map = system.edgemap
     eps = system.elem_props
     v_i = 3 * (vertex - 1) + 1
     x_vert = @view x[v_i:(v_i + 2)]
-    i_v = UInt8(vertex)
+    #i_v = UInt8(vertex)
+    i_v = vertex
     a = @SVector zeros(eltype(x), 3)
     s = @SVector zeros(eltype(x), 3)
 
@@ -16,7 +17,7 @@ function rod_acceleration(x, system::StructuralGraphSystem{Node3DOF}, vertex)
     return a, s
 end
 
-function f_acceleration(a, ext_f, i)
+function f_acceleration(a, ext_f, i::Int)
     a = SA[a[1] + ext_f[i][1], a[2] + ext_f[i][2], a[3] + ext_f[i][3]]
     return a
 end
@@ -32,13 +33,14 @@ function rod_accelerate(a, x0, x1, ep, s)
     current_length = norm(element_vec)
     rest_length = ep.l_init
 
+    axial_stiffness = (ep.E * ep.A) / rest_length
     # Deformation
     extension = current_length - rest_length # Unit: [m]
-
-    # Element internal forces
-    axial_stiffness = (ep.E * ep.A) / rest_length
-    N = axial_stiffness * extension  # Unit: [N]
-    a = a + N * element_vec
+    if !(ep.cable) || ep.cable && extension >= -1e-7
+        # Element internal forces
+        N = axial_stiffness * extension  # Unit: [N]
+        a = a + N * element_vec
+    end
     s = s + axial_stiffness * abs.(element_vec)
     return a, s
 end

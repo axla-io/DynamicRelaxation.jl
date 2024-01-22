@@ -16,16 +16,19 @@ function rod_accelerate(a, τ, u0, u1, body_i, body_j, ep, s, j)
     qv_i = SVector{3, eltype(u0)}(u0[5], u0[6], u0[7])
     qv_j = SVector{3, eltype(u0)}(u1[5], u1[6], u1[7])
 
-    cs_i = body_i.cs
-    cs_j = body_j.cs
+    cs_i = cs_j = ep.cs # TODO: allow for prebent structures
 
     # Get local endplane orientations
     y0 = q_vec_rot(qs_i, qv_i, cs_i.y)
     z0 = q_vec_rot(qs_i, qv_i, cs_i.z)
+    #y0 = q_vec_rot(qs_i, qv_i, cs_i.z)
+    #z0 = q_vec_rot(qs_i, qv_i, cs_i.y)
     x0 = q_vec_rot(qs_i, qv_i, cs_i.x)
 
     y1 = q_vec_rot(qs_j, qv_j, cs_j.y)
     z1 = q_vec_rot(qs_j, qv_j, cs_j.z)
+    #y1 = q_vec_rot(qs_j, qv_j, cs_j.z)
+    #z1 = q_vec_rot(qs_j, qv_j, cs_j.y)
     x1 = q_vec_rot(qs_j, qv_j, cs_j.x)
 
     #Bending angle changes around local axes
@@ -128,9 +131,12 @@ function update_j(y_m, z_m, x_m, j, E, Iy, Iz, G, It, inv_rest_length)
                                   G .* It .* abs.(x_m)) * inv_rest_length)
 end
 
-function get_constrained(constraints::SVector{7, Bool}, x1::S, x2::S) where {T, S <: SVector{3, T}}
-    x1_c =  SVector{3,T}(constraints[i] ? (i < 4 ? zero(T) : x1[i]) : x1[i] for i in axes(x1,1))
-    x2_c = SVector{3, T}(constraints[i] ? (i < 4 ? x2[i] : _zero) : x2[i] for i in axes(x2,1))
+function get_constrained(constraints::SVector{7, Bool}, x1::S,
+                         x2::S) where {T, S <: SVector{3, T}}
+    x1_c = SVector{3, T}(constraints[i] ? zero(T) : x1[i]
+                         for i in axes(x1, 1))
+    x2_c = SVector{3, T}(constraints[i+3] ? zero(T) : x2[i]
+                         for i in axes(x2, 1))
     return x1_c, x2_c
 end
 
@@ -143,7 +149,7 @@ function constrain_acceleration(a, τ, body)
     return a, τ
 end
 
-function f_acceleration(a, τ, ext_f, i)
+function f_acceleration(a, τ, ext_f, i::Int)
     a = SA[a[1] + ext_f[i][1], a[2] + ext_f[i][2], a[3] + ext_f[i][3]]
     τ = SA[τ[1] + ext_f[i][4], τ[2] + ext_f[i][5], τ[3] + ext_f[i][6]]
     return a, τ
@@ -154,7 +160,8 @@ function rod_acceleration(x, system::StructuralGraphSystem{Node6DOF}, body_i, ve
     e_map = system.edgemap
     eps = system.elem_props
     x_vert = @view x[(7 * (vertex - 1) + 1):(7 * vertex)]
-    i_v = UInt8(vertex)
+    #i_v = UInt8(vertex)
+    i_v = Int(vertex)
     u_t = eltype(x)
     a = @SVector zeros(u_t, 3)
     s = @SVector zeros(u_t, 3)
