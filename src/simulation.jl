@@ -74,17 +74,19 @@ function DiffEqBase.ODEProblem(simulation::S, ext_f) where {T, S <: StructuralSi
         ω = @view u[ω_ids]
 
         t_mult = 1.0
+        
+        if typeof(p) == typeof(t_mult) # This is a hack and should be changed later
+            t_mult *= p
+        end
+
         @inbounds for i in 1:n
 
             # Get current body
             body = bodies[i]
-            if typeof(p) == typeof(t_mult)
-                t_mult *= p
-            end
-
+            
             # Accelerate system
             (a, dω) = accelerate_system(u_v, system, simulation, body, ext_f, du,
-                                        dr_ids, ω, i, dt, u_t, t_mult)
+                                        dr_ids, ω, i, dt, u_t, t_mult, t)
             # Update accelerations
             update_accelerations!(du, a, dω, u_len, i, simulation)
         end
@@ -181,7 +183,7 @@ end
 
 function accelerate_system(u_v, system::StructuralGraphSystem{Node6DOF},
                            simulation::RodSimulation{Node6DOF}, body,
-                           ext_f, du, dr_ids, ω, i, dt, u_t, p)
+                           ext_f, du, dr_ids, ω, i, dt, u_t, p, t)
     (a, τ, s, j) = rod_acceleration(u_v, system, body, i)
 
     (a, τ) = f_acceleration(a, τ, ext_f, i, p)
@@ -193,7 +195,7 @@ end
 
 function accelerate_system(u_v, system::StructuralGraphSystem{Node3DOF},
                            simulation::RodSimulation{Node3DOF}, body,
-                           ext_f, du, dr_ids, ω, i, dt, u_t, p)
+                           ext_f, du, dr_ids, ω, i, dt, u_t, p, t)
     (a, s) = rod_acceleration(u_v, system, i)
     a = f_acceleration(a, ext_f, i)
     a = constrain_acceleration(a, body)
