@@ -9,7 +9,8 @@ function CoordinateSystem()
 end
 
 # Struct for storing element properties
-struct ElementProperties
+abstract type AbstractElement end
+struct Beam<:AbstractElement
     E::Float64    # [Pa]
     A::Float64    # [m^2]
     Iy::Float64   # [m^4]
@@ -20,6 +21,17 @@ struct ElementProperties
     cs::CoordinateSystem
 end
 
+struct Bar<:AbstractElement
+    E::Float64    # [Pa]
+    A::Float64    # [m^2]
+    l_init::Float64   # [m]
+    cable::Bool 
+end
+
 function ElementProperties(E, A, Iy, Iz, G, It, l_init)
-    ElementProperties(E, A, Iy, Iz, G, It, l_init, CoordinateSystem())
+    Beam(E, A, Iy, Iz, G, It, l_init, CoordinateSystem())
+end
+
+function ElementProperties(E, A, l_init, cable)
+    Bar(E, A, l_init, cable)
 end
