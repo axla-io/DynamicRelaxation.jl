@@ -11,8 +11,6 @@ using StaticGraphs
 # Differential equation solving
 using DiffEqBase
 using DiffEqCallbacks
-using NBodySimulator
-using SteadyStateDiffEq
 using ForwardDiff
 
 include("elem.jl")
@@ -30,18 +28,18 @@ include("optimization/load_finding.jl")
 
 # Elements and nodes
 export ElementProperties, CoordinateSystem, Node3DOF, Node6DOF
-
+export Bar, Beam, AbstractElement
 # Callbacks
 export velocitydecay!, velocityreset!, ke_condition, ke_termination_cond
 
 # Constraints
-export clamped, free, pinned, roller
+export BigonTorqueCondition, clamped, free, pinned, roller
 
 # Loads
 export Px, Py, Pz, Mx, My, Mz, uniform_load, point_loads
 
 # System 
-export StructuralGraphSystem, default_system
+export StructuralGraphSystem, default_system, get_cs
 
 # Simulation
 export LoadScaleRodSimulation, RodSimulation, BigonRodSimulation, get_u0, get_vel_ids, get_state

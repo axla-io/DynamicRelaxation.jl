@@ -1,5 +1,7 @@
 # Struct for storing nodal properties
-struct Node3DOF <: NBodySimulator.Body
+
+abstract type AbstractNode end
+struct Node3DOF <: AbstractNode
     # Initial conditions
     r::SVector{3,Float64}
     v::SVector{3,Float64}
@@ -13,7 +15,7 @@ function Node3DOF(pos, constrained, constraints)
     Node3DOF(pos, @SVector(zeros(Float64, 3)), constrained, constraints)
 end
 
-struct Node6DOF <: NBodySimulator.Body
+struct Node6DOF <: AbstractNode
     # Initial conditions
     r::SVector{3,Float64}
     q::SVector{4,Float64}
