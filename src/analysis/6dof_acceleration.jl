@@ -149,7 +149,7 @@ function constrain_acceleration(a, τ, body)
     return a, τ
 end
 
-function f_acceleration(a, τ, ext_f, i)
+function f_acceleration(a, τ, ext_f, i::Int)
     a = SA[a[1] + ext_f[i][1], a[2] + ext_f[i][2], a[3] + ext_f[i][3]]
     τ = SA[τ[1] + ext_f[i][4], τ[2] + ext_f[i][5], τ[3] + ext_f[i][6]]
     return a, τ
@@ -160,7 +160,8 @@ function rod_acceleration(x, system::StructuralGraphSystem{Node6DOF}, body_i, ve
     e_map = system.edgemap
     eps = system.elem_props
     x_vert = @view x[(7 * (vertex - 1) + 1):(7 * vertex)]
-    i_v = UInt8(vertex)
+    #i_v = UInt8(vertex)
+    i_v = Int(vertex)
     u_t = eltype(x)
     a = @SVector zeros(u_t, 3)
     s = @SVector zeros(u_t, 3)
