@@ -44,3 +44,8 @@ function q_vec_rot(qs, qv, v)
            (qs^2 - dot(qv, qv)) .* v +
            2.0 * qs .* scross(qv, v)
 end
+
+# Quaternion rotation of coordinate system. Could probably be optimized
+function q_vec_rot(qs, qv, cs::CoordinateSystem)
+    return hcat(q_vec_rot(qs, qv, cs.x), q_vec_rot(qs, qv, cs.y), q_vec_rot(qs, qv, cs.z))
+end 
