@@ -10,6 +10,10 @@ Mx(c, system::StructuralGraphSystem{Node6DOF}) = c * [ 0.0, 0.0, 0.0, 1.0, 0.0, 
 My(c, system::StructuralGraphSystem{Node6DOF}) = c * [ 0.0, 0.0, 0.0, 0.0, 1.0, 0.0]
 Mz(c, system::StructuralGraphSystem{Node6DOF}) = c * [ 0.0, 0.0, 0.0, 0.0, 0.0, 1.0]
 
+P(v, system::StructuralGraphSystem{Node6DOF}) = vcat(v, zeros(eltype(v), 3))
+P(v, system::StructuralGraphSystem{Node3DOF}) = v
+M(v, system::StructuralGraphSystem{Node6DOF}) = vcat(zeros(eltype(v), 3), v)
+
 function uniform_load(v::Vector{T}, system) where {T<:Real}
     N = length(v)
     return [SVector{N,T}(v) for i in 1:Int(nv(system.graph))]
