@@ -1,8 +1,9 @@
 module DynamicRelaxation
 
 # Arrays
-using StaticArrays
 using LinearAlgebra
+using SparseArrays: sparse
+using StaticArrays
 
 # Graph deps
 using Graphs
@@ -12,7 +13,8 @@ using StaticGraphs
 using DiffEqBase
 #using DiffEqCallbacks
 #using ForwardDiff
-using SparseDiffTools: forwarddiff_color_jacobian!
+#using SparseDiffTools: forwarddiff_color_jacobian!
+using SparseDiffTools
 
 include("elem.jl")
 include("node.jl")
