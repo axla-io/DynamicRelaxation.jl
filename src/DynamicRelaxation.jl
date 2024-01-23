@@ -10,13 +10,15 @@ using StaticGraphs
 
 # Differential equation solving
 using DiffEqBase
-using DiffEqCallbacks
-using ForwardDiff
+#using DiffEqCallbacks
+#using ForwardDiff
+using SparseDiffTools: forwarddiff_color_jacobian!
 
 include("elem.jl")
 include("node.jl")
 include("analysis/system.jl")
 include("simulation.jl")
+include("analysis/jacobians.jl")
 include("analysis/loads.jl")
 include("analysis/rotations.jl")
 include("analysis/constraints.jl")
@@ -39,7 +41,7 @@ export BigonTorqueCondition, clamped, free, pinned, roller
 export Px, Py, Pz, Mx, My, Mz, uniform_load, point_loads
 
 # System 
-export StructuralGraphSystem, default_system, get_cs
+export StructuralGraphSystem, default_system, get_cs, get_ode_jac
 
 # Simulation
 export LoadScaleRodSimulation, RodSimulation, BigonRodSimulation, get_u0, get_vel_ids, get_state

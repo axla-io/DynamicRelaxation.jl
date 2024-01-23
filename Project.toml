@@ -9,8 +9,7 @@ LinearAlgebra = "37e2e46d-f89d-539d-b4ee-838fcccc9c8e"
 Graphs = "86223c79-3864-5bf0-83f7-82e725a168b6"
 StaticGraphs = "4c8beaf5-199b-59a0-a7f2-21d17de635b6"
 DiffEqBase = "2b5f629d-d688-5b77-993f-72d75c75574e"
-DiffEqCallbacks = "459566f4-90b8-5000-8ac3-15dfb0a30def"
-ForwardDiff = "f6369f11-7733-5829-9624-2563aa707210"
+SparseDiffTools = "47a9eef4-7e08-11e9-0b38-333d64bd3804"
 
 [extras]
 Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
