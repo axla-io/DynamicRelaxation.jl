@@ -53,7 +53,7 @@ end
 
 interpol(x) = x < 0.1 ? 10x : one(x)
 
-function DiffEqBase.ODEProblem(simulation::S, ext_f; constrain_jac = true) where {T, S <: StructuralSimulation{T}}
+function DiffEqBase.ODEProblem(simulation::S, ext_f; sparse_ad = true) where {T, S <: StructuralSimulation{T}}
 	bodies = simulation.system.bodies
 	system = simulation.system
 	dt = simulation.dt
@@ -91,9 +91,14 @@ function DiffEqBase.ODEProblem(simulation::S, ext_f; constrain_jac = true) where
 			update_accelerations!(du, a, dω, u_len, i, simulation)
 		end
 	end
-
-	ode_jac_prototype = get_jac_prototype(system, u_len, v_len, simulation, constrain_jac)
-	ode_jac = constrain_jac ? get_ode_jac(ode_system!, u_len, uv0, simulation, ode_jac_prototype) : nothing
+	if sparse_ad
+		constrain_jac = true
+		ode_jac_prototype = get_jac_prototype(system, u_len, v_len, simulation, constrain_jac)
+		ode_jac = get_ode_jac(ode_system!, u_len, uv0, simulation, ode_jac_prototype)
+	else
+		ode_jac_prototype = nothing
+		ode_jac = nothing
+	end
 	ode_f = ODEFunction(ode_system!, jac = ode_jac, jac_prototype = ode_jac_prototype)
 
 	return ODEProblem(ode_f, uv0, simulation.tspan)
