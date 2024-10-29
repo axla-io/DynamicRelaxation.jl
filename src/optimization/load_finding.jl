@@ -20,7 +20,7 @@ function f_acceleration(a, ext_f, i::Int, p)
     return a
 end
 
-function accelerate_system(u_v, system::StructuralGraphSystem{Node6DOF},
+function accelerate_system(u_v, system::StructuralGraphSystem{Vector{Node6DOF}},
                            simulation::LoadScaleRodSimulation{Node6DOF}, body,
                            ext_f, du, dr_ids, ω, i, dt, u_t, p, t)
     (a, τ, s, j) = rod_acceleration(u_v, system, body, i)
@@ -31,7 +31,7 @@ function accelerate_system(u_v, system::StructuralGraphSystem{Node6DOF},
     return a, dω
 end
 
-function accelerate_system(u_v, system::StructuralGraphSystem{Node3DOF},
+function accelerate_system(u_v, system::StructuralGraphSystem{Vector{Node3DOF}},
                            simulation::LoadScaleRodSimulation{Node3DOF}, body,
                            ext_f, du, dr_ids, ω, i, dt, u_t, p, t)
     (a, s) = rod_acceleration(u_v, system, i)

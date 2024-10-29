@@ -2,12 +2,14 @@ module DynamicRelaxation
 
 # Arrays
 using LinearAlgebra
-using SparseArrays: sparse
+using SparseArrays: sparse, spzeros, findnz
 using StaticArrays
+using ConcreteStructs
+using UnPack
 
 # Graph deps
-using Graphs
-using StaticGraphs
+#using Graphs
+#using StaticGraphs
 
 # Differential equation solving
 using DiffEqBase
@@ -27,8 +29,9 @@ include("analysis/constraints.jl")
 include("analysis/callbacks.jl")
 include("analysis/3dof_acceleration.jl")
 include("analysis/6dof_acceleration.jl")
-include("analysis/bigon_system.jl")
+#include("analysis/bigon_system.jl")
 include("optimization/load_finding.jl")
+include("analysis/graph.jl")
 
 # Elements and nodes
 export ElementProperties, CoordinateSystem, Node3DOF, Node6DOF
@@ -44,7 +47,7 @@ export BigonTorqueCondition, clamped, free, pinned, roller
 export Px, Py, Pz, Mx, My, Mz, uniform_load, point_loads
 
 # System 
-export StructuralGraphSystem, default_system, get_cs, get_ode_jac
+export StructuralGraphSystem, default_system, get_cs, get_ode_jac, create_graph
 
 # Simulation
 export LoadScaleRodSimulation, RodSimulation, BigonRodSimulation, get_u0, get_vel_ids, get_state

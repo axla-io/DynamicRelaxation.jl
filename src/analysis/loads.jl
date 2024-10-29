@@ -1,18 +1,18 @@
-Px(c, system::StructuralGraphSystem{Node6DOF}) = c * SA[1.0, 0.0, 0.0, 0.0, 0.0, 0.0]
-Py(c, system::StructuralGraphSystem{Node6DOF}) = c * SA[0.0, 1.0, 0.0, 0.0, 0.0, 0.0]
-Pz(c, system::StructuralGraphSystem{Node6DOF}) = c * SA[0.0, 0.0, 1.0, 0.0, 0.0, 0.0]
+Px(c, system::StructuralGraphSystem{Vector{Node6DOF}}) = c * SA[1.0, 0.0, 0.0, 0.0, 0.0, 0.0]
+Py(c, system::StructuralGraphSystem{Vector{Node6DOF}}) = c * SA[0.0, 1.0, 0.0, 0.0, 0.0, 0.0]
+Pz(c, system::StructuralGraphSystem{Vector{Node6DOF}}) = c * SA[0.0, 0.0, 1.0, 0.0, 0.0, 0.0]
 
-Px(c, system::StructuralGraphSystem{Node3DOF}) = c * SA[1.0, 0.0, 0.0]
-Py(c, system::StructuralGraphSystem{Node3DOF}) = c * SA[0.0, 1.0, 0.0]
-Pz(c, system::StructuralGraphSystem{Node3DOF}) = c * SA[0.0, 0.0, 1.0]
+Px(c, system::StructuralGraphSystem{Vector{Node3DOF}}) = c * SA[1.0, 0.0, 0.0]
+Py(c, system::StructuralGraphSystem{Vector{Node3DOF}}) = c * SA[0.0, 1.0, 0.0]
+Pz(c, system::StructuralGraphSystem{Vector{Node3DOF}}) = c * SA[0.0, 0.0, 1.0]
 
-Mx(c, system::StructuralGraphSystem{Node6DOF}) = c * SA[ 0.0, 0.0, 0.0, 1.0, 0.0, 0.0]
-My(c, system::StructuralGraphSystem{Node6DOF}) = c * SA[ 0.0, 0.0, 0.0, 0.0, 1.0, 0.0]
-Mz(c, system::StructuralGraphSystem{Node6DOF}) = c * SA[ 0.0, 0.0, 0.0, 0.0, 0.0, 1.0]
+Mx(c, system::StructuralGraphSystem{Vector{Node6DOF}}) = c * SA[ 0.0, 0.0, 0.0, 1.0, 0.0, 0.0]
+My(c, system::StructuralGraphSystem{Vector{Node6DOF}}) = c * SA[ 0.0, 0.0, 0.0, 0.0, 1.0, 0.0]
+Mz(c, system::StructuralGraphSystem{Vector{Node6DOF}}) = c * SA[ 0.0, 0.0, 0.0, 0.0, 0.0, 1.0]
 
-P(v, system::StructuralGraphSystem{Node6DOF}) = vcat(v, zeros(eltype(v), 3))
-P(v, system::StructuralGraphSystem{Node3DOF}) = v
-M(v, system::StructuralGraphSystem{Node6DOF}) = vcat(zeros(eltype(v), 3), v)
+P(v, system::StructuralGraphSystem{Vector{Node6DOF}}) = vcat(v, zeros(eltype(v), 3))
+P(v, system::StructuralGraphSystem{Vector{Node3DOF}}) = v
+M(v, system::StructuralGraphSystem{Vector{Node6DOF}}) = vcat(zeros(eltype(v), 3), v)
 
 function uniform_load(v::Vector{T}, system) where {T<:Real}
     N = length(v)
@@ -27,7 +27,7 @@ function point_loads(vs, is, system)
     end
 
     loads = Vector{SVector{v_dim,Float64}}()
-    for i in 1:Int(nv(system.graph))
+    for i in 1:Int(length(system.bodies))
         if i in is
             load = SVector{v_dim,Float64}(vs[findfirst(isequal(i), is)])
         else

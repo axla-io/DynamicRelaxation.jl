@@ -155,7 +155,7 @@ function f_acceleration(a, τ, ext_f, i::Int)
     return a, τ
 end
 
-function rod_acceleration(x, system::StructuralGraphSystem{Node6DOF}, body_i, vertex)
+function rod_acceleration(x, system::StructuralGraphSystem{Vector{Node6DOF}}, body_i, vertex)
     graph = system.graph
     e_map = system.edgemap
     eps = system.elem_props

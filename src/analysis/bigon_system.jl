@@ -9,8 +9,8 @@ function get_cond_data(cond::BigonTorqueCondition)
     return cond.cs1, cond.cs2, cond.rest_rotation_matrix
 end
 
-struct BigonRodSimulation <: StructuralSimulation{Node6DOF}
-    system::StructuralGraphSystem{Node6DOF}
+struct BigonRodSimulation <: StructuralSimulation{Vector{Node6DOF}}
+    system::StructuralGraphSystem{Vector{Node6DOF}}
     tspan::Tuple{Float64, Float64}
     dt::Float64
     τ_end::Tuple{Int64, Int64}
@@ -53,7 +53,7 @@ function bigon_forces(a, u, i1, i2, du, simulation)
     return a
 end
 
-function accelerate_system(u_v, system::StructuralGraphSystem{Node6DOF},
+function accelerate_system(u_v, system::StructuralGraphSystem{Vector{Node6DOF}},
                            simulation::BigonRodSimulation, body,
                            ext_f, du, dr_ids, ω, i, dt, u_t, p, t)
     (a, τ, s, j) = rod_acceleration(u_v, system, body, i)

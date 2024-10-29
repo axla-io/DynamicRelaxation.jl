@@ -16,7 +16,7 @@ function inner_jac!(J, u, p, t, f, constrained, adtype,cache, y)
 	return nothing
 end
 
-function constrained_dofs(u_len, simulation::T) where {T <: StructuralSimulation{Node6DOF}}
+function constrained_dofs(u_len, simulation::T) where {T <: StructuralSimulation{Vector{Node6DOF}}}
 	num_constrained_pos = sum(sum(@view(body.constraints[1:3])) for body in simulation.system.bodies if body.constrained == true) * 2 # Times 2 because we constrain velocity
 	num_constrained_rot = 7 * (sum(sum(@view(body.constraints[4:7])) for body in simulation.system.bodies if body.constrained == true) / 4) |> Int # Will always either be clamped or free, atleast for now.
 	num_constrained = num_constrained_pos + num_constrained_rot
@@ -39,7 +39,7 @@ function constrained_dofs(u_len, simulation::T) where {T <: StructuralSimulation
 	return dofs
 end
 
-function constrained_dofs(constrained_ids, u_len, simulation::T) where {T <: StructuralSimulation{Node3DOF}}
+function constrained_dofs(constrained_ids, u_len, simulation::T) where {T <: StructuralSimulation{Vector{Node3DOF}}}
 
 	return error("constrained_dofs for 3DOF systems not implemented yet!")
 end
