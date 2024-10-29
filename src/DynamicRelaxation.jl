@@ -32,6 +32,7 @@ include("optimization/load_finding.jl")
 
 # Elements and nodes
 export ElementProperties, CoordinateSystem, Node3DOF, Node6DOF
+export num_dof
 export Bar, Beam, AbstractElement
 # Callbacks
 export velocitydecay!, velocityreset!, ke_condition, ke_termination_cond
@@ -49,6 +50,6 @@ export StructuralGraphSystem, default_system, get_cs, get_ode_jac
 export LoadScaleRodSimulation, RodSimulation, BigonRodSimulation, get_u0, get_vel_ids, get_state
 
 # Plotting
-export generate_range
+export generate_range, get_C
 
 end  # module

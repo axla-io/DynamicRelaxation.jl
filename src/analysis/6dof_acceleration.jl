@@ -161,16 +161,17 @@ function rod_acceleration(x, system::StructuralGraphSystem{Node6DOF}, body_i, ve
     eps = system.elem_props
     x_vert = @view x[(7 * (vertex - 1) + 1):(7 * vertex)]
     #i_v = UInt8(vertex)
-    i_v = Int(vertex)
+    #i_v = Int(vertex)
+    i_v = vertex
     u_t = eltype(x)
     a = @SVector zeros(u_t, 3)
     s = @SVector zeros(u_t, 3)
     τ = @SVector zeros(u_t, 3)
     j = @SVector zeros(u_t, 3)
 
-    @inbounds for neighbor in neighbors(graph, i_v)
+    for neighbor in neighbors(graph, i_v)
         body_j = system.bodies[neighbor]
-        ep = eps[edge_index((i_v, neighbor), e_map)]
+        ep = eps[edge_index((Int64(i_v), Int64(neighbor)), e_map)]
         (a, τ, s, j) = rod_accelerate(a, τ, x_vert,
                                       @view(x[(7 * (neighbor - 1) + 1):(7 * neighbor)]),
                                       body_i, body_j, ep, s, j)

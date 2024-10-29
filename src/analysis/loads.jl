@@ -1,14 +1,14 @@
-Px(c, system::StructuralGraphSystem{Node6DOF}) = c * [1.0, 0.0, 0.0, 0.0, 0.0, 0.0]
-Py(c, system::StructuralGraphSystem{Node6DOF}) = c * [0.0, 1.0, 0.0, 0.0, 0.0, 0.0]
-Pz(c, system::StructuralGraphSystem{Node6DOF}) = c * [0.0, 0.0, 1.0, 0.0, 0.0, 0.0]
+Px(c, system::StructuralGraphSystem{Node6DOF}) = c * SA[1.0, 0.0, 0.0, 0.0, 0.0, 0.0]
+Py(c, system::StructuralGraphSystem{Node6DOF}) = c * SA[0.0, 1.0, 0.0, 0.0, 0.0, 0.0]
+Pz(c, system::StructuralGraphSystem{Node6DOF}) = c * SA[0.0, 0.0, 1.0, 0.0, 0.0, 0.0]
 
-Px(c, system::StructuralGraphSystem{Node3DOF}) = c * [1.0, 0.0, 0.0]
-Py(c, system::StructuralGraphSystem{Node3DOF}) = c * [0.0, 1.0, 0.0]
-Pz(c, system::StructuralGraphSystem{Node3DOF}) = c * [0.0, 0.0, 1.0]
+Px(c, system::StructuralGraphSystem{Node3DOF}) = c * SA[1.0, 0.0, 0.0]
+Py(c, system::StructuralGraphSystem{Node3DOF}) = c * SA[0.0, 1.0, 0.0]
+Pz(c, system::StructuralGraphSystem{Node3DOF}) = c * SA[0.0, 0.0, 1.0]
 
-Mx(c, system::StructuralGraphSystem{Node6DOF}) = c * [ 0.0, 0.0, 0.0, 1.0, 0.0, 0.0]
-My(c, system::StructuralGraphSystem{Node6DOF}) = c * [ 0.0, 0.0, 0.0, 0.0, 1.0, 0.0]
-Mz(c, system::StructuralGraphSystem{Node6DOF}) = c * [ 0.0, 0.0, 0.0, 0.0, 0.0, 1.0]
+Mx(c, system::StructuralGraphSystem{Node6DOF}) = c * SA[ 0.0, 0.0, 0.0, 1.0, 0.0, 0.0]
+My(c, system::StructuralGraphSystem{Node6DOF}) = c * SA[ 0.0, 0.0, 0.0, 0.0, 1.0, 0.0]
+Mz(c, system::StructuralGraphSystem{Node6DOF}) = c * SA[ 0.0, 0.0, 0.0, 0.0, 0.0, 1.0]
 
 P(v, system::StructuralGraphSystem{Node6DOF}) = vcat(v, zeros(eltype(v), 3))
 P(v, system::StructuralGraphSystem{Node3DOF}) = v

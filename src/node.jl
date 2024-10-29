@@ -15,6 +15,12 @@ function Node3DOF(pos, constrained, constraints)
     Node3DOF(pos, @SVector(zeros(Float64, 3)), constrained, constraints)
 end
 
+function Node3DOF(pos, q0, v0, ω0, constrained, constraints)
+    Node3DOF(pos, @SVector(zeros(Float64, 3)), constrained, constraints)
+end
+
+num_dof(::Type{Node3DOF}) = 3
+
 struct Node6DOF <: AbstractNode
     # Initial conditions
     r::SVector{3,Float64}
@@ -30,3 +36,5 @@ end
 function Node6DOF(pos, constrained, constraints)
     Node6DOF(pos, SVector{4,Float64}(1.0, 0.0, 0.0, 0.0), @SVector(zeros(Float64, 3)), @SVector(zeros(Float64, 3)), constrained, constraints)
 end
+
+num_dof(::Type{Node6DOF}) = 7
