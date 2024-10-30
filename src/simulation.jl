@@ -133,13 +133,14 @@ end
 
 function apply_jns!(a, s, dt, v_id, v)
 	v_i = SA[v[v_id], v[v_id+1], v[v_id+2]]
-	s = s * dt^2.0 / 2.0
-	s = s_min!(s)
-	c = 5e-4
-	c = 0.1
-	#c = sqrt(dt)
-	#a = (a) ./ s  - c.*(2*sqrt(2)/dt)*v_i
-	a = (a) ./ s  - c.*v_i
+	#m = s * dt^2.0 / 2.0
+	#m = s * dt^2.0 / 2.0 * 1.1 # Rombouts
+	m = s * dt^2.0 / 4.0
+	m = s_min!(m)
+	#c = 2 * m # Rombouts
+	c = s * dt 
+	a = (a  - c.*v_i) ./ m
+	#a = a ./ m
 	return a
 end
 
@@ -235,8 +236,17 @@ function accelerate_system(u_v, system::StructuralGraphSystem{Vector{Node3DOF}},
 	rod_acceleration(u_v, system, i)
 	(a, s) = rod_acceleration(u_v, system, i)
 	a = f_acceleration(a, ext_f, i)
+	#a = apply_jns!(a, s, dt)
+	#= if isdefined(Main, :Infiltrator)
+	Main.infiltrate(@__MODULE__, Base.@locals, @__FILE__, @__LINE__)
+		end =#
+	u_len = length(u_v)
+	dx_ids = get_ids(1, 3, 3, u_len)
+	v = @view du[dx_ids]
+	v_id = 3 * (i - 1) + 1
+	a = apply_jns!(a, s, dt, v_id, v)
+	#a = apply_jns!(a, s, dt)
 	a = constrain_acceleration(a, body)
-	a = apply_jns!(a, s, dt)
 	return (a, a)
 end
 
