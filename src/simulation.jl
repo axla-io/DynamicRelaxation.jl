@@ -236,16 +236,9 @@ function accelerate_system(u_v, system::StructuralGraphSystem{Vector{Node3DOF}},
 	rod_acceleration(u_v, system, i)
 	(a, s) = rod_acceleration(u_v, system, i)
 	a = f_acceleration(a, ext_f, i)
-	#a = apply_jns!(a, s, dt)
-	#= if isdefined(Main, :Infiltrator)
-	Main.infiltrate(@__MODULE__, Base.@locals, @__FILE__, @__LINE__)
-		end =#
 	u_len = length(u_v)
-	dx_ids = get_ids(1, 3, 3, u_len)
-	v = @view du[dx_ids]
 	v_id = 3 * (i - 1) + 1
-	a = apply_jns!(a, s, dt, v_id, v)
-	#a = apply_jns!(a, s, dt)
+	a = apply_jns!(a, s, dt, v_id, du)
 	a = constrain_acceleration(a, body)
 	return (a, a)
 end
