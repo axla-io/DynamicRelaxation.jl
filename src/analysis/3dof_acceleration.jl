@@ -6,7 +6,8 @@ function rod_acceleration(x, system::StructuralGraphSystem{Vector{Node3DOF}}, vt
 	a = @SVector zeros(eltype(x), 3)
 	s = @SVector zeros(eltype(x), 3)
 
-	for neighbor in neighbors(graph, vtx)
+	for idx in nzrange(graph, vtx)
+		neighbor = rowvals(graph)[idx]
 		n_i = 3 * (neighbor - 1) + 1
 		ep = elem_props[edge_index((vtx, neighbor), graph)]
 		(a, s) = rod_accelerate(a, x_vert, @view(x[n_i:(n_i+2)]), ep, s)

@@ -2,7 +2,7 @@ module DynamicRelaxation
 
 # Arrays
 using LinearAlgebra
-using SparseArrays: sparse, spzeros, findnz
+using SparseArrays: sparse, spzeros, findnz, nzrange, rowvals
 using StaticArrays
 using ConcreteStructs
 using UnPack
@@ -47,7 +47,7 @@ export BigonTorqueCondition, clamped, free, pinned, roller
 export Px, Py, Pz, Mx, My, Mz, uniform_load, point_loads
 
 # System 
-export StructuralGraphSystem, default_system, get_cs, get_ode_jac, create_graph
+export StructuralGraphSystem, default_system, get_cs, get_ode_jac, create_graph, edges
 
 # Simulation
 export LoadScaleRodSimulation, RodSimulation, BigonRodSimulation, get_u0, get_vel_ids, get_state

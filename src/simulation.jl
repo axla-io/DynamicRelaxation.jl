@@ -230,8 +230,9 @@ function accelerate_system(u_v, system::StructuralGraphSystem{Vector{Node6DOF}},
 end
 
 function accelerate_system(u_v, system::StructuralGraphSystem{Vector{Node3DOF}},
-	simulation::RodSimulation{Node3DOF}, body,
+	simulation::RodSimulation{Vector{Node3DOF}}, body,
 	ext_f, du, dr_ids, ω, i, dt, u_t, p, t)
+	rod_acceleration(u_v, system, i)
 	(a, s) = rod_acceleration(u_v, system, i)
 	a = f_acceleration(a, ext_f, i)
 	a = constrain_acceleration(a, body)
@@ -240,7 +241,7 @@ function accelerate_system(u_v, system::StructuralGraphSystem{Vector{Node3DOF}},
 end
 
 function get_system_forces(u_v, system::StructuralGraphSystem{Vector{Node6DOF}},
-	simulation::RodSimulation{Node6DOF}, body,
+	simulation::RodSimulation{Vector{Node6DOF}}, body,
 	ext_f, du, dr_ids, ω, i, dt, u_t, p)
 	(a, τ, s, j) = rod_acceleration(u_v, system, body, i)
 
