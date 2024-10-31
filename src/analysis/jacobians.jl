@@ -3,16 +3,18 @@ function get_ode_jac(f, u_len, uv0, simulation, jac_p)
 	adtype = AutoSparseForwardDiff()
 	y = zero(uv0)
 	cache = sparse_jacobian_cache(adtype, sd, (dx, x) -> f(dx, x, p, t), y, uv0)
-	return (J, u, p, t) -> inner_jac!(J, u, p, t, f, constrained_dofs(u_len, simulation), adtype, cache, y)
+	c_dofs = constrained_dofs(u_len, simulation)
+	return c_dofs, adtype, cache, y
 end
 
 function inner_jac!(J, u, p, t, f, constrained, adtype, cache, y)
 	T = eltype(J)
+	t1 = one(T)
 	sparse_jacobian!(J, adtype, cache, (dx, x) -> f(dx, x, p, t), y, u)
 	for k in constrained
-		J[k, :] .= T(0.0)
-		J[k, k] = T(1.0)
+		J[k, k] = ett
 	end
+
 	return nothing
 end
 
@@ -39,7 +41,7 @@ function constrained_dofs(u_len, simulation::StructuralSimulation{Vector{Node6DO
 	return dofs
 end
 
-function constrained_dofs(constrained_ids, u_len, simulation::StructuralSimulation{Vector{Node3DOF}})
+function constrained_dofs(u_len, simulation::StructuralSimulation{Vector{Node3DOF}})
 	num_constrained = sum(sum(@view(body.constraints[1:3])) for body in simulation.system.bodies if body.constrained == true) * 2 # Times 2 because we constrain velocity
 	dofs = zeros(Int, num_constrained)
 	ctr = 1

@@ -94,7 +94,8 @@ function DiffEqBase.ODEProblem(simulation::S, ext_f; sparse_ad = true) where {T,
 	if sparse_ad
 		constrain_jac = true
 		ode_jac_prototype = get_jac_prototype(system, u_len, v_len, simulation, constrain_jac)
-		ode_jac = get_ode_jac(ode_system!, u_len, uv0, simulation, ode_jac_prototype)
+		c_dofs, adtype, cache, y = get_ode_jac(ode_system!, u_len, uv0, simulation, ode_jac_prototype)
+		ode_jac(J, u, p, t) = inner_jac!(J, u, p, t, ode_system!, c_dofs, adtype, cache, y)
 	else
 		ode_jac_prototype = nothing
 		ode_jac = nothing
@@ -154,8 +155,10 @@ function apply_jns!(a, s, dt, v_id, v, x, body_i) # RP style
 
 	m = s * dt^2.0 / 2.0 * 1.1 # Barnes style
 	m = s_min!(m; min = 10000)
-	natf = sqrt(abs(dot(x_i, a))/max(1.0, dot(x_i, m.* x_i))) # RP style
-	c = 2 * natf * m 
+	#natf = sqrt(abs(dot(x_i, a))/max(1.0, dot(x_i, m.* x_i))) # RP style
+	#c = 2 * natf * m 
+	#c = s * dt
+	c = 2 * m 
 
 	a = (a  - c.*v_i) ./ m 
 	#a = a ./ m

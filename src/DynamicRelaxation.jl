@@ -2,7 +2,7 @@ module DynamicRelaxation
 
 # Arrays
 using LinearAlgebra
-using SparseArrays: sparse, spzeros, findnz, nzrange, rowvals
+using SparseArrays: sparse, spzeros, findnz, nzrange, rowvals, nnz
 using StaticArrays
 using ConcreteStructs
 using UnPack
