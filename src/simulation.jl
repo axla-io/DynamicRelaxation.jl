@@ -131,15 +131,33 @@ function apply_jns!(a, s, dt)
 	return a
 end
 
-function apply_jns!(a, s, dt, v_id, v)
+function apply_jns!(a, s, dt, v_id, v; style = 2)
 	v_i = SA[v[v_id], v[v_id+1], v[v_id+2]]
 	#m = s * dt^2.0 / 2.0
-	#m = s * dt^2.0 / 2.0 * 1.1 # Rombouts
-	m = s * dt^2.0 / 4.0
-	m = s_min!(m)
-	#c = 2 * m # Rombouts
-	c = s * dt 
-	a = (a  - c.*v_i) ./ m
+	if style == 1 # Own derivation
+		m = s * dt^2.0 / 4.0
+		c = s * dt 
+	elseif style ==2 # Rombouts simplified
+		m = s * dt^2.0 / 2.0 * 1.1
+		c = 2 * m 
+	end
+	
+	m = s_min!(m; min = 10000)
+	a = (a  - c.*v_i) ./ m 
+	#a = a ./ m
+	return a
+end
+
+function apply_jns!(a, s, dt, v_id, v, x, body_i) # RP style
+	v_i = SA[v[v_id], v[v_id+1], v[v_id+2]]
+	x_i = SA[x[v_id], x[v_id+1], x[v_id+2]] - body_i.r
+
+	m = s * dt^2.0 / 2.0 * 1.1 # Barnes style
+	m = s_min!(m; min = 10000)
+	natf = sqrt(abs(dot(x_i, a))/max(1.0, dot(x_i, m.* x_i))) # RP style
+	c = 2 * natf * m 
+
+	a = (a  - c.*v_i) ./ m 
 	#a = a ./ m
 	return a
 end
@@ -238,7 +256,8 @@ function accelerate_system(u_v, system::StructuralGraphSystem{Vector{Node3DOF}},
 	a = f_acceleration(a, ext_f, i)
 	u_len = length(u_v)
 	v_id = 3 * (i - 1) + 1
-	a = apply_jns!(a, s, dt, v_id, du)
+	a = apply_jns!(a, s, dt, v_id, du, u_v, body)
+	#a = apply_jns!(a, s, dt, v_id, du)
 	a = constrain_acceleration(a, body)
 	return (a, a)
 end

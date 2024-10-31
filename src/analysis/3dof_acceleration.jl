@@ -20,8 +20,8 @@ function f_acceleration(a, ext_f, i::Int)
 	return a
 end
 
-function s_min!(s)
-	_one = one(eltype(s))
+function s_min!(s; min)
+	_one = one(eltype(s)) * min
 	return SA[max(s[1], _one), max(s[2], _one), max(s[3], _one)]
 end
 
